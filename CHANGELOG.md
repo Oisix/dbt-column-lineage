@@ -10,6 +10,8 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-06-22
+
 ### Added
 - **`?export=png` deep link**: opening `/cl?...&export=png` (typically with
   `?design=`) fits the view, captures the canvas, and downloads it as a PNG
