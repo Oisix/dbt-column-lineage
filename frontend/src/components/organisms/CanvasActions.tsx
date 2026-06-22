@@ -1,10 +1,10 @@
 'use client'
 import React, { useCallback } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { toBlob } from 'html-to-image'
 import { Camera, Pencil } from 'lucide-react'
 import { useStore as useStoreZustand } from '@/store/zustand'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { captureCanvasBlob, downloadBlob, imageFilename } from '@/lib/exportImage'
 
 // キャンバス右下に出す丸アイコンのアクション群。
 // Edit(設計モードの入口・ON で紫)を主、Copy(画像コピー)を副として置く。
@@ -15,23 +15,27 @@ export const CanvasActions = () => {
   const setEditMode = useStoreZustand((state) => state.setEditMode)
 
   const copyToClipboard = useCallback(async () => {
-    const flowElement = document.querySelector('.react-flow__viewport') as HTMLElement
-    // ビューをフィットさせてから画像化する
-    window.requestAnimationFrame(() => fitView())
-    await new Promise(resolve => setTimeout(resolve, 100))
-    const blob = await toBlob(flowElement, { backgroundColor: '#fff' })
-    if (blob) {
+    const blob = await captureCanvasBlob(fitView)
+    if (!blob) {
+      setMessage('Failed to capture canvas', 'error')
+      setTimeout(() => setMessage(null, null), 3000)
+      return
+    }
+    // クリップボードへの画像書き込みに対応していれば優先。未対応 / 失敗(HTTP 接続や
+    // ClipboardItem image/png 非対応ブラウザ等)なら object URL でのダウンロードに切り替える。
+    if (typeof window.ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
       try {
-        const data = [new window.ClipboardItem({ 'image/png': blob })]
-        await navigator.clipboard.write(data)
+        await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })])
         setMessage('Canvas image copied to clipboard!', 'success')
         setTimeout(() => setMessage(null, null), 3000)
+        return
       } catch (err) {
-        setMessage('Failed to copy to clipboard', 'error')
-        console.error('Failed to copy:', err)
-        setTimeout(() => setMessage(null, null), 3000)
+        console.error('Clipboard write failed, falling back to download:', err)
       }
     }
+    downloadBlob(blob, imageFilename())
+    setMessage('Clipboard unavailable — image downloaded instead', 'info')
+    setTimeout(() => setMessage(null, null), 3000)
   }, [fitView, setMessage])
 
   const circle = 'flex items-center justify-center rounded-full border shadow-md transition-colors'
