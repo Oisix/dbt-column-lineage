@@ -33,6 +33,7 @@ import { EditableTableNode, EditableTableNodeProps } from '@/components/molecule
 import { NoteNode, NoteNodeProps } from '@/components/molecules/NoteNode'
 import { EditToolbar } from '@/components/organisms/EditToolbar'
 import { CanvasActions } from '@/components/organisms/CanvasActions'
+import { AutoImageExport } from '@/components/organisms/AutoImageExport'
 import { deserializeDesign, DesignSnapshot } from '@/lib/design'
 
 interface QueryParams {
@@ -321,6 +322,7 @@ export const Cl = () => {
           </div>
           <Sidebar setNodes={setNodes} setEdges={setEdges} setViewIsFit={setViewIsFit}
                    setNodesPositioned={setNodesPositioned} nodesPositioned={nodesPositioned} />
+          <AutoImageExport ready={viewIsFit} nodeCount={nodes.length} />
         </ReactFlowProvider>
       </div>
     </div>

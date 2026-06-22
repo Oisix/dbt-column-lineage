@@ -10,6 +10,15 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Added
+- **`?export=png` deep link**: opening `/cl?...&export=png` (typically with
+  `?design=`) fits the view, captures the canvas, and downloads it as a PNG
+  automatically — no clipboard and no interaction needed, so a headless browser
+  or CI can produce a static preview image in one step. The capture path no
+  longer relies on the clipboard, so the bottom-right **Copy** button now falls
+  back to a download when `ClipboardItem`/`navigator.clipboard.write` is
+  unavailable (HTTP origins, some browsers) instead of just failing.
+
 ## [0.6.2] - 2026-06-12
 
 ### Added

@@ -129,7 +129,8 @@ When the frontend is built with `NEXT_PUBLIC_USE_LOOKER=true` (and the Looker an
 | `selectedColumns` | JSON object `{"model": ["col", …]}` |
 | `showColumn` | `true` = column mode, `false` = table mode |
 | `depth` | traversal depth (`-1` = unlimited) |
-| `design` | a compressed design snapshot (from **Share**) — when present, everything else is ignored and the snapshot is restored as-is |
+| `design` | a compressed design snapshot (from **Share**) — when present, the lineage params above are ignored and the snapshot is restored as-is (`export`, below, is still applied) |
+| `export` | `png` → after the graph renders, the canvas is captured and downloaded as a PNG automatically (no clipboard needed, works headless). Combine with any view, but `?design=…&export=png` is the typical use |
 
 `/cte` accepts `schema`, `sources`, `activeSource`, and `selectedColumns` for a single model.
 
@@ -223,4 +224,10 @@ dbt-column-lineage run   # http://127.0.0.1:5000
 
 A small design (a few tables) encodes to well under 1 KB. Keep URLs under ~8 KB; beyond that, ship the JSON file itself and load it via **Edit mode → Import** instead.
 
-Since the page renders without any interaction, a headless browser can also screenshot the result — e.g. to attach a static preview image to a PR alongside the link.
+Since the page renders without any interaction, a headless browser can also screenshot the result — e.g. to attach a static preview image to a PR alongside the link. To get the PNG without driving the browser yourself, append **`&export=png`**: the page fits the view, captures the canvas, and downloads `dbt-lineage-<timestamp>.png` on its own.
+
+```bash
+# open http://127.0.0.1:5000/cl?design=<encoded>&export=png   → downloads the design as a PNG
+```
+
+This works for any `/cl` view (a `sources`/`selectedColumns` lineage URL too), but pairs best with `?design=` since that path needs no warehouse and no API call.
