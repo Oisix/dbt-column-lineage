@@ -10,6 +10,15 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-07-02
+
+### Changed
+- `SECURITY.md` now points to GitHub private vulnerability reporting only;
+  the contact email address was removed there and from the package metadata
+  (`authors` in `pyproject.toml`).
+- README: removed the CI badge and the demo GIF embed, which do not render
+  outside the repository.
+
 ## [0.6.4] - 2026-07-02
 
 ### Changed
