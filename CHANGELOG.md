@@ -10,9 +10,12 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-07-02
+
 ### Changed
 - Maintainer contact email in `pyproject.toml`, `SECURITY.md`, and
-  `CODE_OF_CONDUCT.md` switched to a personal address.
+  `CODE_OF_CONDUCT.md` switched to a personal address. PyPI package
+  metadata reflects the new address from this release onward.
 
 ## [0.6.3] - 2026-06-22
 
