@@ -8,7 +8,7 @@ Instead, report privately via one of:
 
 - GitHub's [private vulnerability reporting](https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/security/advisories/new)
   (Security → Report a vulnerability), or
-- email **takahashi_tomoki@oisixradaichi.co.jp**.
+- email **gyamxxx@gmail.com**.
 
 Please include reproduction steps and the affected version. We aim to
 acknowledge reports within a few business days.

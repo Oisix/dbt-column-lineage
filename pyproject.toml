@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "dbt_column_lineage"
 dynamic = ["version"]
 description = "Visualize column-level lineage of dbt models in the browser, parsed from manifest.json/catalog.json with sqlglot"
-authors = [{name = "Tomoki Takahashi", email = "takahashi_tomoki@oisixradaichi.co.jp"}]
+authors = [{name = "Tomoki Takahashi", email = "gyamxxx@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["dbt", "lineage", "column-lineage", "sqlglot", "data-lineage", "snowflake"]
