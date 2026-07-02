@@ -10,6 +10,10 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Changed
+- Maintainer contact email in `pyproject.toml`, `SECURITY.md`, and
+  `CODE_OF_CONDUCT.md` switched to a personal address.
+
 ## [0.6.3] - 2026-06-22
 
 ### Added
