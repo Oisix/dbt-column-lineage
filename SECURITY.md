@@ -8,8 +8,9 @@ Instead, report privately via GitHub's
 [private vulnerability reporting](https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/security/advisories/new):
 open the repository's **Security** tab → **Report a vulnerability**.
 
-Please include reproduction steps and the affected version. We aim to
-acknowledge reports within a few business days.
+Please include reproduction steps and the affected version. Reports are
+triaged by the maintainers listed in [`.github/CODEOWNERS`](.github/CODEOWNERS);
+we aim to acknowledge reports within a few business days.
 
 ## Supported versions
 
