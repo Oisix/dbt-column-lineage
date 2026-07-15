@@ -10,6 +10,10 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Added
+- `.github/CODEOWNERS`: default owners for the whole repository
+  (maintainer plus two co-maintainers).
+
 ## [0.6.5] - 2026-07-02
 
 ### Changed
