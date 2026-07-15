@@ -51,6 +51,15 @@ Node 20).
 - Update `CHANGELOG.md` (the `[Unreleased]` section) for user-facing changes.
 - Match the surrounding code style. Python is formatted with `black`/`isort`;
   the frontend follows the ESLint flat config.
+- Sign off every commit (`git commit -s`) — see
+  [DCO](#developer-certificate-of-origin-dco) below.
+
+## Developer Certificate of Origin (DCO)
+
+All commits must carry a `Signed-off-by` trailer (`git commit -s`), certifying
+the [Developer Certificate of Origin](https://developercertificate.org/) —
+that you wrote the change or otherwise have the right to submit it under the
+project license. PRs containing unsigned commits cannot be merged.
 
 ## Releasing (maintainers)
 

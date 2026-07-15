@@ -13,6 +13,12 @@ for the full history prior to this file.
 ### Added
 - `.github/CODEOWNERS`: default owners for the whole repository
   (maintainer plus two co-maintainers).
+- `CONTRIBUTING.md`: adopted the Developer Certificate of Origin —
+  commits must be signed off (`git commit -s`).
+
+### Changed
+- `SECURITY.md`: vulnerability reports are triaged by the maintainers
+  listed in `CODEOWNERS`.
 
 ## [0.6.5] - 2026-07-02
 
