@@ -8,6 +8,11 @@ Instead, report privately via GitHub's
 [private vulnerability reporting](https://github.com/Oisix/dbt-column-lineage/security/advisories/new):
 open the repository's **Security** tab → **Report a vulnerability**.
 
+> **Note:** GitHub only offers private vulnerability reporting on public
+> repositories. If this repository is private (e.g. during internal review),
+> the form above is unavailable — contact the maintainers listed in
+> [`.github/CODEOWNERS`](.github/CODEOWNERS) directly instead.
+
 Please include reproduction steps and the affected version. Reports are
 triaged by the maintainers listed in [`.github/CODEOWNERS`](.github/CODEOWNERS);
 we aim to acknowledge reports within a few business days.

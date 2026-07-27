@@ -24,7 +24,9 @@ for the full history prior to this file.
   so existing links and clones keep working; the PyPI package name and
   install instructions are unchanged.
 - `SECURITY.md`: vulnerability reports are triaged by the maintainers
-  listed in `CODEOWNERS`.
+  listed in `CODEOWNERS`; noted that GitHub private vulnerability reporting
+  is unavailable while the repository is private — contact the `CODEOWNERS`
+  maintainers directly in that case.
 
 ## [0.6.5] - 2026-07-02
 
