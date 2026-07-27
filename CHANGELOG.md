@@ -10,6 +10,11 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Security
+- Bumped the transitive `brace-expansion` copies in the frontend lockfile
+  (1.1.15 → 1.1.16 and 5.0.6 → 5.0.8) to clear two high-severity Dependabot
+  alerts that Dependabot could not raise PRs for (nested transitive pins).
+
 ### Added
 - `.github/CODEOWNERS`: default owners for the whole repository
   (maintainer plus two co-maintainers).
