@@ -10,11 +10,11 @@ This is a tool to visualize the column level lineage of dbt models. It uses the 
 
 Trace a column across models, then expand more columns to grow the lineage interactively.
 
-> The demo runs on the synthetic dbt project under [`demo/`](https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/tree/main/demo) (no warehouse required). Regenerate its `manifest.json`/`catalog.json` with `python demo/build_demo_manifest.py`.
+> The demo runs on the synthetic dbt project under [`demo/`](https://github.com/Oisix/dbt-column-lineage/tree/main/demo) (no warehouse required). Regenerate its `manifest.json`/`catalog.json` with `python demo/build_demo_manifest.py`.
 
 There's also an **edit / design mode** (pencil button, bottom-right): edit existing models or sketch new ones — name, columns, and materialization type (table/view/incremental/snapshot/seed) — then share the design as a URL or export it as JSON.
 
-📖 See the **[UI guide](https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/blob/main/docs/ui-guide.md)** for a tour of every operation — exploring the graph, the CTE page, edit / design mode, Looker mode, deep links, and the design-snapshot JSON spec for generating designs programmatically (e.g. from CI or an LLM agent).
+📖 See the **[UI guide](https://github.com/Oisix/dbt-column-lineage/blob/main/docs/ui-guide.md)** for a tour of every operation — exploring the graph, the CTE page, edit / design mode, Looker mode, deep links, and the design-snapshot JSON spec for generating designs programmatically (e.g. from CI or an LLM agent).
 
 # quickstart
 Install dbt-column-lineage using pip:
@@ -44,7 +44,7 @@ dbt-column-lineage run-params
 
 To develop the application, you will need to run the backend and frontend separately.
 ```
-git clone git@github.com:tomoki-takahashi-oisix/dbt-column-lineage.git
+git clone git@github.com:Oisix/dbt-column-lineage.git
 cd dbt-column-lineage
 ```
 ## for backend

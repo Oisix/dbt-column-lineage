@@ -5,7 +5,7 @@
 Please **do not** open a public GitHub issue for security vulnerabilities.
 
 Instead, report privately via GitHub's
-[private vulnerability reporting](https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/security/advisories/new):
+[private vulnerability reporting](https://github.com/Oisix/dbt-column-lineage/security/advisories/new):
 open the repository's **Security** tab → **Report a vulnerability**.
 
 Please include reproduction steps and the affected version. Reports are

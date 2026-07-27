@@ -4,8 +4,8 @@ All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions are derived from git tags via `setuptools_scm`; see the
-[releases](https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/releases)
-and [git tags](https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/tags)
+[releases](https://github.com/Oisix/dbt-column-lineage/releases)
+and [git tags](https://github.com/Oisix/dbt-column-lineage/tags)
 for the full history prior to this file.
 
 ## [Unreleased]
@@ -17,6 +17,12 @@ for the full history prior to this file.
   commits must be signed off (`git commit -s`).
 
 ### Changed
+- The repository moved to the `Oisix` organization. Every GitHub URL in
+  `pyproject.toml` (`[project.urls]`), `README.md`, `CHANGELOG.md`,
+  `SECURITY.md`, and `.github/ISSUE_TEMPLATE/config.yml` now points at
+  `Oisix/dbt-column-lineage`. GitHub permanently redirects the old paths,
+  so existing links and clones keep working; the PyPI package name and
+  install instructions are unchanged.
 - `SECURITY.md`: vulnerability reports are triaged by the maintainers
   listed in `CODEOWNERS`.
 

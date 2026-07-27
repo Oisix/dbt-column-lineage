@@ -42,10 +42,10 @@ dev = [
 dbt-column-lineage = "dbt_column_lineage.main:main"
 
 [project.urls]
-Homepage = "https://github.com/tomoki-takahashi-oisix/dbt-column-lineage"
-Repository = "https://github.com/tomoki-takahashi-oisix/dbt-column-lineage"
-Issues = "https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/issues"
-Changelog = "https://github.com/tomoki-takahashi-oisix/dbt-column-lineage/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Oisix/dbt-column-lineage"
+Repository = "https://github.com/Oisix/dbt-column-lineage"
+Issues = "https://github.com/Oisix/dbt-column-lineage/issues"
+Changelog = "https://github.com/Oisix/dbt-column-lineage/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
