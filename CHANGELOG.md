@@ -11,6 +11,11 @@ for the full history prior to this file.
 ## [Unreleased]
 
 ### Security
+- Forced `sharp` (an optional dependency of `next`, unused at runtime since
+  the frontend is a static export) from 0.34.5 to 0.35.3 via an npm
+  `overrides` entry, clearing the Dependabot alert for the libvips CVEs
+  (CVE-2026-33327/33328/35590/35591). `next` still declares `^0.34.5`, so
+  drop the override once it catches up.
 - Bumped the transitive `brace-expansion` copies in the frontend lockfile
   again (1.1.16 → 1.1.18 and 5.0.8 → 5.0.9) for CVE-2026-14257 — the 1.x
   backport of the fix shipped after the advisory was published.
