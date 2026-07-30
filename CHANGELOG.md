@@ -12,8 +12,18 @@ for the full history prior to this file.
 
 ### Security
 - Bumped the transitive `brace-expansion` copies in the frontend lockfile
+  again (1.1.16 → 1.1.18 and 5.0.8 → 5.0.9) for CVE-2026-14257 — the 1.x
+  backport of the fix shipped after the advisory was published.
+- CI now pins GitHub Actions to full commit SHAs (with the tag noted in a
+  comment) instead of mutable major-version tags; Dependabot keeps the pins
+  up to date via the existing `github-actions` ecosystem entry.
+- Bumped the transitive `brace-expansion` copies in the frontend lockfile
   (1.1.15 → 1.1.16 and 5.0.6 → 5.0.8) to clear two high-severity Dependabot
   alerts that Dependabot could not raise PRs for (nested transitive pins).
+
+### Removed
+- `test/.gitkeep`: obsolete — the tracked `test/unit/` suite already keeps
+  the directory in existence.
 
 ### Added
 - `.github/CODEOWNERS`: default owners for the whole repository
