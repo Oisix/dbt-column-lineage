@@ -21,6 +21,11 @@ for the full history prior to this file.
   (1.1.15 → 1.1.16 and 5.0.6 → 5.0.8) to clear two high-severity Dependabot
   alerts that Dependabot could not raise PRs for (nested transitive pins).
 
+### Changed
+- `CODE_OF_CONDUCT.md`: conduct reports now go to the maintainers listed in
+  `.github/CODEOWNERS` (same pattern as `SECURITY.md`) instead of a personal
+  email address.
+
 ### Removed
 - `test/.gitkeep`: obsolete — the tracked `test/unit/` suite already keeps
   the directory in existence.
