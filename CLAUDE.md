@@ -35,7 +35,9 @@ The frontend reaches the backend via `process.env.NEXT_PUBLIC_API_HOSTNAME` (emp
 - `SQLGLOT_DIALECT` — sqlglot dialect for parsing compiled SQL (default `snowflake`). Must match the dbt warehouse.
 - A dbt project with `target/manifest.json` and `target/catalog.json` (run `dbt docs generate`). The backend locates it via `DBT_PROJECT_DIR`, else auto-detects (`dbt_project.yml` in cwd / common locations — see `utils.find_dbt_project`).
 
-Other env flags (see `constants.py`): `USE_OAUTH`, `DEBUG_MODE`, `NEXT_PUBLIC_USE_LOOKER`, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `DBT_DOCS_BASE_URL`, `SESSION_SECRET`, `MAX_LINEAGE_SECONDS`.
+Other env flags (see `constants.py`): `USE_OAUTH`, `DEBUG_MODE`, `NEXT_PUBLIC_USE_LOOKER`, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `DBT_DOCS_BASE_URL`, `SESSION_SECRET`, `MAX_LINEAGE_SECONDS`, `CORS_ALLOW_ORIGINS`.
+
+- `CORS_ALLOW_ORIGINS` — comma-separated allowed origins, default `http://localhost:3000`. CORS exists here **only** for the split dev setup (frontend on :3000 → backend on :5000); the packaged app mounts the built frontend at `/` and the frontend calls `NEXT_PUBLIC_API_HOSTNAME || ''`, so production is same-origin and never sends an `Origin` header. Do not restore `allow_origins=['*']`: it is paired with `allow_credentials=True`, and Starlette reflects the caller's origin in that combination, which would let any site read authenticated responses.
 
 - `DBT_DOCS_BASE_URL` — base URL of a dbt-docs site (e.g. `https://docs.example.com/dbt/latest`).
   - When set, each table node's menu gains an **"Open in dbt docs"** item linking to `{base}/#!/{resource_type}/{unique_id}`.

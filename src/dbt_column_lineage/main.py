@@ -19,7 +19,7 @@ from requests.auth import HTTPBasicAuth
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from dbt_column_lineage.constants import USE_OAUTH, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, BASE_ROUTE, SESSION_SECRET
+from dbt_column_lineage.constants import USE_OAUTH, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, BASE_ROUTE, SESSION_SECRET, CORS_ALLOW_ORIGINS
 from dbt_column_lineage.lineage import DbtSqlglot
 from dbt_column_lineage.looker import Looker
 from dbt_column_lineage.utils import get_logger, get_redirect_url, get_diff_to_params, startup_dialect_check
@@ -35,8 +35,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# CORS設定
-app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
+# CORS設定。allow_credentials=True と '*' の併用は、任意のオリジンからの
+# 認証付きリクエストを許可することになるため、許可先を明示的に列挙する。
+app.add_middleware(CORSMiddleware, allow_origins=CORS_ALLOW_ORIGINS, allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
 
 # セッション管理のミドルウェア追加。
 # SESSION_SECRET があれば全プロセスで共有(複数ワーカー/インスタンスでセッション維持)、
@@ -85,7 +86,6 @@ async def static_page(request: Request):
             request.session['csrf'] = os.urandom(32).hex()
         elif 'access_token' not in request.session:
             return RedirectResponse(url='/login')
-        logger.debug(f'access_token: {request.session.get("access_token")}')
 
     if request_path == '/':
         static_path = 'index'
@@ -146,7 +146,9 @@ async def callback(request: Request, state: str, code: str):
     )
 
     data = response.json()
-    logger.debug(data)
+    # レスポンス本体には access_token / refresh_token / id_token が含まれるため、
+    # 疎通確認に足る情報(ステータスとキー名)だけを残す。
+    logger.debug(f'token endpoint responded {response.status_code}, keys: {sorted(data)}')
     access_token = data['access_token']
     request.session['access_token'] = access_token
 
