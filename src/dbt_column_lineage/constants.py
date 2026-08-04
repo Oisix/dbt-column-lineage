@@ -8,6 +8,15 @@ GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 SQLGLOT_DIALECT=os.getenv('SQLGLOT_DIALECT', 'snowflake')
 
+# CORS の許可オリジン(カンマ区切り)。パッケージ版はフロントを同一オリジンで配信する
+# ため CORS は不要で、これは実質フロントを別ポートで動かす開発時(npm run dev)専用。
+# 別ホストでフロントを配信する場合のみ、そのオリジンを明示的に指定する。
+CORS_ALLOW_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CORS_ALLOW_ORIGINS', 'http://localhost:3000').split(',')
+    if origin.strip()
+]
+
 # dbt docs (dbt-docs SPA) のベースURL。設定すると各テーブルノードのメニューに
 # 「Open in dbt docs」が出て {base}/#!/{resource_type}/{unique_id} に遷移する。
 # 汎用ツールなので固定せず、環境ごとに実行時に指定する。未設定ならメニューは出ない。

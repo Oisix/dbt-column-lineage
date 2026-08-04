@@ -100,6 +100,8 @@ docker run -p 5000:5000 -e USE_OAUTH=true -e GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID 
 
 > **`SESSION_SECRET`** — The container runs `uvicorn --workers 2` (multiple processes), and a deployment may also scale out to multiple instances. Sessions are stored in a signed cookie, so every process must share the **same** signing key. With `USE_OAUTH=true`, set a fixed `SESSION_SECRET` (any stable random string) or sign-in breaks across workers (login loops / API `401`). If unset, each process generates its own random key (fine only for a single process). Without OAuth it is not needed.
 
+> **`CORS_ALLOW_ORIGINS`** — Comma-separated list of browser origins allowed to call the API cross-origin; defaults to `http://localhost:3000` (the frontend dev server). A normal deployment serves the frontend from the same origin as the API, so cross-origin requests never happen and this needs no change. Set it only if you host the frontend separately, and list the exact origins rather than `*` — the API allows credentials, so `*` would let any site read authenticated responses.
+
 ## limiting heavy lineage queries (optional)
 
 For very large projects a single request — e.g. reverse lineage of a hub column consumed by many models — can take a long time. Set `MAX_LINEAGE_SECONDS` to a wall-clock budget (seconds); when traversal exceeds it, the server stops and returns the partial result flagged `truncated` (the UI shows a banner) instead of hanging. Default `-1` = unbounded. In a hosted deployment set it below your gateway's request timeout so you get `200 + truncated` rather than a gateway timeout.

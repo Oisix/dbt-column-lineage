@@ -11,6 +11,16 @@ for the full history prior to this file.
 ## [Unreleased]
 
 ### Security
+- CORS no longer allows every origin. `allow_origins` was `['*']` alongside
+  `allow_credentials=True`, which makes Starlette reflect the caller's origin
+  and would let any site read authenticated responses. The allowlist now
+  defaults to `http://localhost:3000` (the frontend dev server) and is
+  configurable via `CORS_ALLOW_ORIGINS`. Same-origin deployments — including
+  the packaged app, which serves the built frontend itself — are unaffected.
+- OAuth tokens are no longer written to the debug log: the Google token
+  endpoint response (`access_token`, `refresh_token`, `id_token`) was logged
+  verbatim, and the session's access token was logged on every page request.
+  The former now logs only the status code and response key names.
 - Forced `sharp` (an optional dependency of `next`, unused at runtime since
   the frontend is a static export) from 0.34.5 to 0.35.3 via an npm
   `overrides` entry, clearing the Dependabot alert for the libvips CVEs
