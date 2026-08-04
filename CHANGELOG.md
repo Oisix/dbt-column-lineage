@@ -36,15 +36,6 @@ for the full history prior to this file.
   (1.1.15 → 1.1.16 and 5.0.6 → 5.0.8) to clear two high-severity Dependabot
   alerts that Dependabot could not raise PRs for (nested transitive pins).
 
-### Changed
-- `CODE_OF_CONDUCT.md`: conduct reports now go to the maintainers listed in
-  `.github/CODEOWNERS` (same pattern as `SECURITY.md`) instead of a personal
-  email address.
-
-### Removed
-- `test/.gitkeep`: obsolete — the tracked `test/unit/` suite already keeps
-  the directory in existence.
-
 ### Added
 - `.github/CODEOWNERS`: default owners for the whole repository
   (maintainer plus two co-maintainers).
@@ -52,6 +43,12 @@ for the full history prior to this file.
   commits must be signed off (`git commit -s`).
 
 ### Changed
+- `CODE_OF_CONDUCT.md`: conduct reports now go to the maintainers listed in
+  `.github/CODEOWNERS` (same pattern as `SECURITY.md`) instead of a personal
+  email address.
+- `.gitignore`: ignore `uv.lock`. Dependencies are declared in
+  `pyproject.toml`; the lockfile is a local artifact of whichever installer
+  a contributor happens to use.
 - The repository moved to the `Oisix` organization. Every GitHub URL in
   `pyproject.toml` (`[project.urls]`), `README.md`, `CHANGELOG.md`,
   `SECURITY.md`, and `.github/ISSUE_TEMPLATE/config.yml` now points at
@@ -62,6 +59,10 @@ for the full history prior to this file.
   listed in `CODEOWNERS`; noted that GitHub private vulnerability reporting
   is unavailable while the repository is private — contact the `CODEOWNERS`
   maintainers directly in that case.
+
+### Removed
+- `test/.gitkeep`: obsolete — the tracked `test/unit/` suite already keeps
+  the directory in existence.
 
 ## [0.6.5] - 2026-07-02
 
