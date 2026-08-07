@@ -11,6 +11,13 @@ for the full history prior to this file.
 ## [Unreleased]
 
 ### Security
+- `/dashboards` no longer returns exception text to the client. The Looker
+  handler put `str(e)` in the response `message`, which became the HTTP 500
+  detail and could expose internal paths and library state; the details now
+  go to the log only (CodeQL `py/stack-trace-exposure`).
+- The CI workflow now declares `permissions: contents: read`, so its
+  `GITHUB_TOKEN` is no longer granted the default write scopes
+  (CodeQL `actions/missing-workflow-permissions`).
 - CORS no longer allows every origin. `allow_origins` was `['*']` alongside
   `allow_credentials=True`, which makes Starlette reflect the caller's origin
   and would let any site read authenticated responses. The allowlist now

@@ -59,11 +59,13 @@ class Looker:
                 'data': sorted_dashboards
             }
 
-        except Exception as e:
-            self.logger.error(f"Error processing dashboards: {str(e)}")
+        except Exception:
+            # message は API レスポンスとしてクライアントに返るため、例外の詳細は
+            # ログにのみ残す(内部パスやライブラリ内部の状態が外に出るのを避ける)。
+            self.logger.exception('Error processing dashboards')
             return {
                 'status': 'error',
-                'message': str(e),
+                'message': 'Failed to process dashboards',
                 'total_dashboards': 0,
                 'data': []
             }
