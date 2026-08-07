@@ -8,7 +8,12 @@ Versions are derived from git tags via `setuptools_scm`; see the
 and [git tags](https://github.com/Oisix/dbt-column-lineage/tags)
 for the full history prior to this file.
 
-## [Unreleased]
+## [0.6.6] - 2026-08-07
+
+This is the first release since the project became company OSS: the
+repository moved to the `Oisix` organization and is now public. Most of the
+changes below come from the architecture and security reviews that gated
+that publication.
 
 ### Security
 - `/dashboards` no longer returns exception text to the client. The Looker
