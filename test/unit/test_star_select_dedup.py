@@ -65,7 +65,6 @@ def test_star_select_label_resolves_to_underlying_table(dbt):
     node = lineage("doctor_name", DEDUP_SQL, dialect="trino")
     leaf = next(n for n in node.walk() if not n.downstream)
     label = dbt._DbtSqlglot__resolve_star_select_label(leaf.expression)
-    # Same convention as the existing Table branch: a quoted identifier is
-    # f-string'd as-is, so the label keeps its double quotes (e.g.
-    # `"int_dim_patient"` — observed in the same form in production logs).
-    assert label and label.strip('"').lower() == "raw_doctors", label
+    # Uses Table.name (not a raw f-string of .this), so a quoted identifier's
+    # surrounding quotes are stripped — the label matches the plain table name.
+    assert label == "raw_doctors", label

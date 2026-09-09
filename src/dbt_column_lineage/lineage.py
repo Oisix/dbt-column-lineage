@@ -405,12 +405,12 @@ class DbtSqlglot:
         for _ in range(10):
             if not isinstance(current, exp.Select):
                 return None
-            from_expr = current.args.get('from') or current.args.get('from_')
+            from_expr = current.args.get('from_')
             if from_expr is None:
                 return None
             target = from_expr.this
             if isinstance(target, exp.Table):
-                return f'{target.this}'
+                return target.name
             if isinstance(target, exp.Subquery) and id(target) not in seen_ids:
                 seen_ids.add(id(target))
                 current = target.this
@@ -430,7 +430,7 @@ class DbtSqlglot:
         meta = []
         for node in lin.walk():
             if isinstance(node.expression, exp.Table):
-                label = f'{node.expression.this}'
+                label = node.expression.name
                 # 配下のデータがなければ最後とみなす
                 self.logger.debug(f'label: {label}')
                 if len(node.downstream) == 0 and not self.__is_phantom_cte_label(label, cte_names, source):
@@ -513,7 +513,7 @@ class DbtSqlglot:
             meta = []
             for node in lin.walk():
                 if isinstance(node.expression, exp.Table):
-                    label = f'{node.expression.this}'
+                    label = node.expression.name
                     # 配下のデータがなければ最後とみなす
                     self.logger.debug(f'label: {label}')
                     if len(node.downstream) == 0 and not self.__is_phantom_cte_label(label, cte_names, source):

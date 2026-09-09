@@ -8,6 +8,18 @@ Versions are derived from git tags via `setuptools_scm`; see the
 and [git tags](https://github.com/Oisix/dbt-column-lineage/tags)
 for the full history prior to this file.
 
+## [Unreleased]
+
+### Fixed
+- A column whose lineage passes through a `SELECT *, ROW_NUMBER() OVER (...) FROM x`
+  dedup subquery ("latest row per key") no longer dead-ends with an empty
+  `labels` set. sqlglot's lineage walk can terminate on the dedup subquery's
+  own `Select` (wildcard projection) instead of an `exp.Table`; that leaf is
+  now unwrapped back to its underlying table so lineage keeps resolving.
+- Table labels now use `Table.name` instead of a raw f-string of `.this`, so a
+  quoted identifier (e.g. `"raw_doctors"`) no longer produces a phantom node
+  whose name still carries the quotes and fails to match the real dbt model.
+
 ## [0.6.6] - 2026-08-07
 
 This is the first release since the project became company OSS: the
