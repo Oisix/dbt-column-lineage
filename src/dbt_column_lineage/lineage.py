@@ -391,6 +391,31 @@ class DbtSqlglot:
         )
         return True
 
+    def __resolve_star_select_label(self, select_expr) -> t.Optional[str]:
+        """`SELECT *, ROW_NUMBER() OVER (...) FROM x` のようなワイルドカード+ウィンドウ関数の
+        組み合わせでは、sqlglot の lineage walk が Table ではなく Select 自身を downstream=0 の
+        末端として返すことがある(ワイルドカードが展開されない)。そのままでは __is_table な
+        Table 分岐に一致せず label が付かず、テーブル箱・エッジが一切描画されない。
+        この Select 自身の FROM を(Subquery越しに)辿り、実テーブルに解決できればそれを
+        label として使う。解決できなければ None を返し、呼び出し側は今までどおり無視する。"""
+        current = select_expr
+        seen_ids = set()
+        for _ in range(10):
+            if not isinstance(current, exp.Select):
+                return None
+            from_expr = current.args.get('from') or current.args.get('from_')
+            if from_expr is None:
+                return None
+            target = from_expr.this
+            if isinstance(target, exp.Table):
+                return f'{target.this}'
+            if isinstance(target, exp.Subquery) and id(target) not in seen_ids:
+                seen_ids.add(id(target))
+                current = target.this
+                continue
+            return None
+        return None
+
     def __extract_lineage_node(self, lin, source: str, need_meta=False, cte_names: set = None) -> dict:
         """1カラム分の sqlglot lineage Node を走査して {labels, columns(, meta)} を作る。
         per-column 経路(__get_sqlglot_lineage)とバッチ経路(__build_reverse_index の
@@ -407,6 +432,11 @@ class DbtSqlglot:
                 # 配下のデータがなければ最後とみなす
                 self.logger.debug(f'label: {label}')
                 if len(node.downstream) == 0 and not self.__is_phantom_cte_label(label, cte_names, source):
+                    labels.add(label)
+            elif isinstance(node.expression, exp.Select) and len(node.downstream) == 0:
+                label = self.__resolve_star_select_label(node.expression)
+                self.logger.debug(f'star-select label: {label}')
+                if label and not self.__is_phantom_cte_label(label, cte_names, source):
                     labels.add(label)
             if node.name != '*' and not isinstance(node.expression, exp.Table):
                 cte = node.expression.sql(dialect=self.dialect)
@@ -485,6 +515,11 @@ class DbtSqlglot:
                     # 配下のデータがなければ最後とみなす
                     self.logger.debug(f'label: {label}')
                     if len(node.downstream) == 0 and not self.__is_phantom_cte_label(label, cte_names, source):
+                        labels.add(label)
+                elif isinstance(node.expression, exp.Select) and len(node.downstream) == 0:
+                    label = self.__resolve_star_select_label(node.expression)
+                    self.logger.debug(f'star-select label: {label}')
+                    if label and not self.__is_phantom_cte_label(label, cte_names, source):
                         labels.add(label)
                 if node.name != '*' and not isinstance(node.expression, exp.Table):
                     cte = node.expression.sql(dialect=self.dialect)
