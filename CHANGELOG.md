@@ -8,7 +8,11 @@ Versions are derived from git tags via `setuptools_scm`; see the
 and [git tags](https://github.com/Oisix/dbt-column-lineage/tags)
 for the full history prior to this file.
 
-## [Unreleased]
+## [0.6.7] - 2026-09-10
+
+Bug-fix release for column lineage on non-Snowflake dialects, prompted by
+#90 (reported against trino). Thanks to @pravinm-spry / @CodeWithPravinMaske
+for the report and the first fix (#92).
 
 ### Fixed
 - Table references in `compiled_code` now resolve against the sqlglot schema
