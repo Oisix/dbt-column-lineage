@@ -11,6 +11,15 @@ for the full history prior to this file.
 ## [Unreleased]
 
 ### Fixed
+- Table references in `compiled_code` now resolve against the sqlglot schema
+  for non-Snowflake dialects. The schema built from `manifest`/`catalog` was
+  registered upper-cased with `normalize=False`, which only matched
+  Snowflake-style unquoted identifiers; on dialects whose unquoted identifiers
+  fold to lowercase (trino, duckdb, postgres, ...) every lookup missed, so even
+  `select id, jan from db.schema.model` produced no upstream edge, `select *`
+  never expanded, and a `select *` over a join left an empty extra node. The
+  schema now uses `normalize=True` with the manifest's original case, so both
+  sides follow the same dialect rules (root cause behind #90).
 - A column whose lineage passes through a `SELECT *, ROW_NUMBER() OVER (...) FROM x`
   dedup subquery ("latest row per key") no longer dead-ends with an empty
   `labels` set. sqlglot's lineage walk can terminate on the dedup subquery's
