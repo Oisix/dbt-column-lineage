@@ -219,10 +219,12 @@ class DbtSqlglot:
             columns = self.__get_dbt_catalog(element['name']).get('columns', element_columns)
             res.append({
                 'columns': columns,
+                # 大文字化しない: 識別子の大小文字正規化は MappingSchema(normalize=True)
+                # が dialect の規則に従って行う(__get_sqlglot_db_schema 参照)。
                 'table': exp.Table(
-                    catalog=exp.Identifier(this=element['database'].upper()),
-                    db=exp.Identifier(this=element['schema'].upper()),
-                    this=exp.Identifier(this=element['name'].upper()),
+                    catalog=exp.Identifier(this=element['database']),
+                    db=exp.Identifier(this=element['schema']),
+                    this=exp.Identifier(this=element['name']),
                 )
             })
         return res
@@ -570,7 +572,12 @@ class DbtSqlglot:
         return ret
 
     def __get_sqlglot_db_schema(self, depends_on_table_info):
-        sqlglot_db_schema = MappingSchema(dialect=self.dialect, normalize=False)
+        # normalize=True: 登録するテーブル/カラム名も compiled_code 側の参照も、
+        # dialect の規則(snowflake は unquoted→大文字、trino/duckdb は →小文字など)で
+        # 正規化してから突合する。以前は manifest 側を一律 .upper() し normalize=False
+        # で登録していたため、snowflake 以外の dialect では compiled_code 中の参照と
+        # 一致せず schema 解決に失敗し、`select *` が展開されずリネージが途切れていた。
+        sqlglot_db_schema = MappingSchema(dialect=self.dialect, normalize=True)
         for s in depends_on_table_info:
             source_table = s['table']
             source_columns = s['columns']
