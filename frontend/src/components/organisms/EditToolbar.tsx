@@ -159,11 +159,13 @@ export const EditToolbar: React.FC<EditToolbarProps> = ({ nodes, edges, setNodes
         <button type="button" className={createBtn} onClick={addNoteNode} {...describe('Add a sticky note / annotation')}>
           <StickyNote size={15} /> + Note
         </button>
-        <button type="button" className={createBtn} onClick={autoLayout} {...describe('Re-arrange all nodes automatically (releases manual positions)')}>
-          <LayoutGrid size={15} /> Auto layout
-        </button>
 
         <span className="mx-1 h-6 w-px bg-gray-200" aria-hidden />
+
+        {/* 配置(グレー): 作る操作ではないので保存・共有と同じ色にする */}
+        <button type="button" className={saveBtn} onClick={autoLayout} {...describe('Re-arrange all nodes automatically (releases manual positions)')}>
+          <LayoutGrid size={15} /> Auto layout
+        </button>
 
         {/* 保存・共有 */}
         <button type="button" className={saveBtn} onClick={shareUrl} {...describe('Copy a shareable URL of this design')}>

@@ -24,7 +24,8 @@ for the full history prior to this file.
 
 ### Changed
 - Toggling edit mode re-runs the auto-layout for non-manual nodes, since designed
-  nodes change width between edit and view mode.
+  nodes change width between edit and view mode. This includes analyzed lineage
+  fetched from the API: its nodes are re-arranged on the toggle unless you dragged them.
 
 ## [0.6.7] - 2026-09-10
 
