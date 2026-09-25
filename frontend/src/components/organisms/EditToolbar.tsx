@@ -1,7 +1,7 @@
 'use client'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Edge, Node, useReactFlow } from '@xyflow/react'
-import { Table, StickyNote, Share2, Download, Upload } from 'lucide-react'
+import { Table, StickyNote, Share2, Download, Upload, LayoutGrid } from 'lucide-react'
 import { useStore as useStoreZustand } from '@/store/zustand'
 import { serializeDesign, exportDesignJson, importDesignJson, DesignSnapshot, DesignView } from '@/lib/design'
 
@@ -27,6 +27,7 @@ export const EditToolbar: React.FC<EditToolbarProps> = ({ nodes, edges, setNodes
   const options = useStoreZustand((state) => state.options)
   const sourceMode = useStoreZustand((state) => state.sourceMode)
   const setMessage = useStoreZustand((state) => state.setMessage)
+  const setClearNodePosition = useStoreZustand((state) => state.setClearNodePosition)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // 説明エリア: ホバー中のボタン説明 / 起動直後だけ出る既定ヒント(数秒で消える)。
   const [hovered, setHovered] = useState<string | null>(null)
@@ -77,6 +78,14 @@ export const EditToolbar: React.FC<EditToolbarProps> = ({ nodes, edges, setNodes
       { id, type: 'noteNode', position: centerPosition(), data: { text: '', custom: true, manual: true } } as Node,
     ])
   }, [centerPosition, setNodes])
+
+  // 全ノードの手動配置を解除して dagre で並べ直す。復元した設計図(全ノード manual)は通常の
+  // 再レイアウトでは動かないので、重なったまま共有された古いリンクを救うための明示操作。
+  // 位置が変わるだけなので、Share し直せば並べ直した状態の URL になる。
+  const autoLayout = useCallback(() => {
+    setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, manual: false } })))
+    setClearNodePosition(true)
+  }, [setNodes, setClearNodePosition])
 
   const flash = useCallback((msg: string, type: 'success' | 'error' | 'info') => {
     setMessage(msg, type)
@@ -149,6 +158,9 @@ export const EditToolbar: React.FC<EditToolbarProps> = ({ nodes, edges, setNodes
         </button>
         <button type="button" className={createBtn} onClick={addNoteNode} {...describe('Add a sticky note / annotation')}>
           <StickyNote size={15} /> + Note
+        </button>
+        <button type="button" className={createBtn} onClick={autoLayout} {...describe('Re-arrange all nodes automatically (releases manual positions)')}>
+          <LayoutGrid size={15} /> Auto layout
         </button>
 
         <span className="mx-1 h-6 w-px bg-gray-200" aria-hidden />
