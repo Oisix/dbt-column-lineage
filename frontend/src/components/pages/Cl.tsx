@@ -2,7 +2,7 @@
 import { useSearchParams } from 'next/navigation'
 import { TableNode, TableNodeProps } from '@/components/molecules/TableNode'
 import { useGetWindowSize } from '@/hooks/useGetWindowSize'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   addEdge,
@@ -27,7 +27,7 @@ import { Header } from '@/components/organisms/Header'
 import { useStore as useStoreZustand } from '@/store/zustand'
 import { Loader, AlertTriangle } from 'lucide-react'
 import ToggleButtons from '@/components/ui/ToggleButtons'
-import { getColorClassForMaterialized, materializedTypes } from '@/lib/utils'
+import { getColorClassForMaterialized, materializedTypes, designChangeStyles, designChangeTypes } from '@/lib/utils'
 import { DashboardNode, DashboardNodeProps } from '@/components/molecules/DashboardNode'
 import { EditableTableNode, EditableTableNodeProps } from '@/components/molecules/EditableTableNode'
 import { NoteNode, NoteNodeProps } from '@/components/molecules/NoteNode'
@@ -164,17 +164,24 @@ export const Cl = () => {
     [setEdges],
   )
 
-  // スナップショット(URL/Import)を適用する。全ノードを manual 扱いにして dagre の再配置を抑止し、
-  // 凍結した位置をそのまま再現する。setNodesPositioned(false) は fitView のトリガー。
+  // スナップショット(URL/Import)を適用する。既定では全ノードを manual 扱いにして dagre の再配置を抑止し、
+  // 凍結した位置をそのまま再現する。ただしノードが明示的に manual: false を持つ場合は dagre に任せる
+  // (スクリプト生成の設計図は実寸を知らず position を決め打ちするため、重なりを避けたい時に使う)。
+  // setNodesPositioned(false) は dagre レイアウト + fitView のトリガー。
   const applySnapshot = useCallback((snapshot: DesignSnapshot) => {
     setShowColumn(snapshot.view.showColumn)
     setOptions({ rankdir: snapshot.view.rankdir })
     setSourceMode(snapshot.view.sourceMode)
-    setNodes(snapshot.nodes.map((n) => ({ ...n, data: { ...n.data, manual: true } })))
+    setNodes(snapshot.nodes.map((n) => ({ ...n, data: { ...n.data, manual: n.data?.manual !== false } })))
     setEdges(snapshot.edges)
     setTruncated(false)
     setNodesPositioned(false)
   }, [setShowColumn, setOptions, setSourceMode, setNodes, setEdges, setTruncated])
+
+  const hasChangeStatus = useMemo(
+    () => nodes.some((n) => n.type === 'editableTableNode' && (n.data as { change?: unknown })?.change),
+    [nodes],
+  )
 
   const nodeTypes = useMemo(() => ({
     tableNode: (props: TableNodeProps) => <TableNode {...props} />,
@@ -198,6 +205,18 @@ export const Cl = () => {
     setNodesPositioned(false)
   }, [sidebarActive])
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // 編集モードの切替で設計ノードの幅が変わる(名前が input ⇔ 全幅テキスト)ので、自動配置のノードを
+  // 並べ直す。手動配置(manual)のノードは dagre が動かさないので影響しない。
+  // clearNodePosition 経由なのは、再計測を待つ 100ms 遅延を持っているため。初回マウントでは走らせない。
+  const editModeMounted = useRef(false)
+  useEffect(() => {
+    if (!editModeMounted.current) {
+      editModeMounted.current = true
+      return
+    }
+    setClearNodePosition(true)
+  }, [editMode, setClearNodePosition])
 
   useEffect(() => {
     setOptions({ rankdir: 'RL' })
@@ -302,6 +321,17 @@ export const Cl = () => {
                       </div>
                     ))}
                   </div>
+                  {/* 設計ノードに変更区分があるときだけ、その凡例を2行目に出す */}
+                  {hasChangeStatus && (
+                    <div className="mt-1 flex items-center justify-end space-x-2">
+                      {designChangeTypes.map((type) => (
+                        <div key={type} className="flex items-center">
+                          <div className={`w-4 h-4 mr-1 rounded-xs bg-white ${designChangeStyles[type].border}`}></div>
+                          <span className="text-[10px] whitespace-nowrap text-gray-700">{type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 }
               </Panel>

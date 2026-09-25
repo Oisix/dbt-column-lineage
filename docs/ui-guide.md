@@ -94,6 +94,7 @@ Edit mode turns the lineage canvas into a lightweight design (DFD) editor: sketc
 
 - **+ Table** — add a planned table at the center of the view: set its name, add/rename/remove columns, mark primary keys with the **PK** toggle (multiple PKs = composite key), and pick a materialization type. Select the node to reveal its delete (trash) button.
 - **+ Note** — add a sticky note for free-text annotations. Resize the text area as needed.
+- **Auto layout** — releases every node's manual position and re-arranges the whole canvas with the auto-layout (sized to the nodes as rendered). Use it to untangle a shared design whose tables overlap; **Share** again afterwards to get a URL with the new positions.
 - **Share** — copies a URL that reproduces the whole canvas (nodes, edges, positions, and view mode). The design is compressed into the URL itself, so very large designs are warned about (>2 KB) or blocked (>8 KB) — use Export then.
 - **Export** — downloads the design as `lineage-design.json` (no size limit; also nice for keeping designs in Git).
 - **Import** — loads a previously exported JSON file and replaces the current canvas with it.
@@ -106,9 +107,19 @@ Drag from a violet **column dot** on one node to a column dot on another to draw
 
 Use **⋮ → Edit (design)** on a regular (analyzed) table node to convert it into an editable node — its existing edges are preserved, and you can then rename columns, add planned ones, or mark keys. This is the way to sketch "how this model should change".
 
+### Change status (new / modified / existing)
+
+A designed table can carry a change status, picked from the second dropdown in its header (`—` = none). It tells reviewers what a PR does to each model:
+
+- **new** — dashed violet border with a **NEW** badge
+- **modified** — dashed amber border with a **MODIFIED** badge
+- **existing** — solid gray border, no badge (an unchanged model shown for context, styled like analyzed nodes)
+
+When any table has a status, a second legend row for the three statuses appears under the materialization legend (top right). Tables without a status keep the plain dashed-violet look.
+
 ### Restoring a design
 
-Opening a **Share** URL (or importing a JSON) restores the snapshot exactly as it was — including manual node positions and the view mode — without re-querying the lineage API. From there you can keep editing, or expand real lineage around the design as usual.
+Opening a **Share** URL (or importing a JSON) restores the snapshot exactly as it was — including manual node positions and the view mode — without re-querying the lineage API. The exception is nodes saved with `manual: false`, which are auto-laid out on restore (see the snapshot rules below). From there you can keep editing, or expand real lineage around the design as usual.
 
 ## Looker mode (optional)
 
@@ -156,6 +167,7 @@ The value of `?design=` (and the content of an Export/Import file) is this JSON,
         "columns": ["payment_id", "order_id", "amount"],
         "pks": ["payment_id"],
         "materialized": "view",
+        "change": "existing",
         "custom": true,
         "manual": true
       }
@@ -169,6 +181,7 @@ The value of `?design=` (and the content of an Export/Import file) is this JSON,
         "columns": ["order_id", "total_amount"],
         "pks": ["order_id"],
         "materialized": "incremental",
+        "change": "new",
         "custom": true,
         "manual": true
       }
@@ -198,8 +211,8 @@ Rules:
 
 - **`view`** — use `{"showColumn": true, "rankdir": "RL", "sourceMode": "dbt"}` for hand-authored designs. The view settings must match the handles your edges reference, so don't change them unless you know why.
 - **Node types** — author with `editableTableNode` (a planned/designed table) and `noteNode` (annotation). `tableNode` / `dashboardNode` also round-trip (they appear when you export an analyzed graph) but aren't meant to be written by hand.
-- **`editableTableNode.data`** — `name` (string), `columns` (string array), optional `pks` (subset of `columns`; multiple = composite key), optional `materialized` (`table` | `view` | `incremental` | `snapshot` | `seed`, default `table`). Always set `custom: true, manual: true`.
-- **`position` is required** and is frozen on restore — there is no auto-layout for snapshots. A simple recipe: upstream models on the left, ~400 px per dependency layer in `x`, ~200–250 px between tables in `y`.
+- **`editableTableNode.data`** — `name` (string), `columns` (string array), optional `pks` (subset of `columns`; multiple = composite key), optional `materialized` (`table` | `view` | `incremental` | `snapshot` | `seed`, default `table`), optional `change` (`new` | `modified` | `existing`; see [Change status](#change-status-new--modified--existing)). Always set `custom: true`, and set `manual` as below.
+- **`position` is required.** With `manual: true` (or `manual` omitted) it is frozen on restore. With **`manual: false`** the node is auto-laid out on restore using its rendered size, and `position` is only a fallback for older versions that ignore the flag. **Prefer `manual: false` for generated designs**: a script doesn't know how tall a 30-column table or how wide a long model name renders, so fixed coordinates tend to overlap. For the fallback `position`, a simple recipe is upstream models on the left, ~400 px per dependency layer in `x`, ~200–250 px between tables in `y`. Dragging a node sets it back to `manual: true`.
 - **Edges point downstream → upstream**, matching how analyzed lineage edges are stored: `source` is the *consuming* model's node id with `sourceHandle: "<column>__source"`, `target` is the upstream model's node id with `targetHandle: "<column>__target"`. Column names in handle ids must exactly match entries in `data.columns`. Include the `style` shown above to get the dashed-violet "designed edge" look.
 - A malformed snapshot fails safe: the page shows *"Invalid or corrupted design URL"* and renders nothing.
 

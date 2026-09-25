@@ -8,6 +8,25 @@ Versions are derived from git tags via `setuptools_scm`; see the
 and [git tags](https://github.com/Oisix/dbt-column-lineage/tags)
 for the full history prior to this file.
 
+## [Unreleased]
+
+### Added
+- Design snapshots: `editableTableNode.data.change` (`new` | `modified` | `existing`)
+  marks what a PR does to each model — a NEW / MODIFIED badge and border color per
+  status, plus a legend row when any node has one. It can be set from the node header
+  in edit mode. Nodes without it render as before.
+- Design snapshots: nodes with `manual: false` are auto-laid out (dagre, using rendered
+  sizes) on restore instead of keeping their `position`. Generated designs that could
+  not know node sizes no longer overlap. Existing links (all `manual: true`) are
+  restored exactly as before.
+- Edit toolbar: **Auto layout** button that releases manual positions and re-arranges
+  the canvas, to fix designs that were shared with overlapping tables.
+
+### Changed
+- Toggling edit mode re-runs the auto-layout for non-manual nodes, since designed
+  nodes change width between edit and view mode. This includes analyzed lineage
+  fetched from the API: its nodes are re-arranged on the toggle unless you dragged them.
+
 ## [0.6.7] - 2026-09-10
 
 Bug-fix release for column lineage on non-Snowflake dialects, prompted by

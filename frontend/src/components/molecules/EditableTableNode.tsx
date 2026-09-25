@@ -3,7 +3,10 @@ import React, { useCallback, useMemo } from 'react'
 import { Handle, Node, NodeProps, Position, useReactFlow } from '@xyflow/react'
 import { Trash2, Plus, X } from 'lucide-react'
 import { useStore as useStoreZustand } from '@/store/zustand'
-import { getColorClassForMaterialized, materializedTypes } from '@/lib/utils'
+import {
+  getColorClassForMaterialized, materializedTypes,
+  designChangeStyles, designChangeTypes, isDesignChangeType,
+} from '@/lib/utils'
 
 // 設計フェーズで開発者が手で足す「これから作るテーブル」。
 // 属性はテーブル名・カラム名・materialize 種別。ハンドル ID は実テーブルノードと同じ
@@ -13,8 +16,10 @@ export type EditableTableNodeDataType = {
   columns: string[]
   pks?: string[] // 主キーのカラム名。複数指定で複合主キー
   materialized?: string // table / view / incremental / snapshot / seed。未指定は table 扱い
+  change?: 'new' | 'modified' | 'existing' // PR での変更区分。未指定は従来の見た目
   custom: true
-  manual: true
+  // true = 位置を固定(dagre で動かさない)。スナップショットで false にすると復元時に自動レイアウトされる
+  manual: boolean
 }
 
 export type EditableTableNodeFlowType = Node<EditableTableNodeDataType, 'editableTableNode'>
@@ -47,6 +52,13 @@ export const EditableTableNode: React.FC<EditableTableNodeProps> = ({ data, id, 
     (e: React.ChangeEvent<HTMLSelectElement>) => updateNodeData(id, { materialized: e.target.value }),
     [id, updateNodeData],
   )
+  const setChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) =>
+      updateNodeData(id, { change: isDesignChangeType(e.target.value) ? e.target.value : undefined }),
+    [id, updateNodeData],
+  )
+  const change = isDesignChangeType(data.change) ? data.change : null
+  const changeStyle = change ? designChangeStyles[change] : null
   const renameColumn = useCallback(
     (index: number, value: string) => {
       const old = columns[index]
@@ -86,9 +98,17 @@ export const EditableTableNode: React.FC<EditableTableNodeProps> = ({ data, id, 
 
   return (
     <div
-      className={`relative flex flex-col rounded-sm border-2 border-dashed border-violet-500 bg-white text-sm ${selected ? 'shadow-lg' : 'shadow-md'}`}
+      className={`relative flex flex-col rounded-sm ${changeStyle?.border ?? 'border-2 border-dashed border-violet-500'} bg-white text-sm ${selected ? 'shadow-lg' : 'shadow-md'}`}
       style={{ minWidth: 200 }}
     >
+      {/* 変更区分バッジ。ヘッダーの上辺に重ねて置き、ノード幅を広げない */}
+      {changeStyle?.badge && (
+        <span
+          className={`pointer-events-none absolute -top-2.5 right-2 z-10 rounded-sm px-1.5 py-px text-[9px] font-bold tracking-wide shadow-sm ${changeStyle.badge}`}
+        >
+          {changeStyle.label}
+        </span>
+      )}
       {/* テーブルレベルのハンドル(テーブル同士をつなぐ用) */}
       <Handle type="target" position={Position.Right} id={`${id}__target`} isConnectable style={{ ...dot, top: 16 }} />
       <Handle type="source" position={Position.Left} id={`${id}__source`} isConnectable style={{ ...dot, top: 16 }} />
@@ -113,6 +133,19 @@ export const EditableTableNode: React.FC<EditableTableNodeProps> = ({ data, id, 
             title="Materialization type"
           >
             {materializedTypes.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        )}
+        {editMode && (
+          <select
+            className="nodrag ml-1 shrink-0 rounded-sm border border-violet-300 bg-white px-1 py-0.5 text-[10px] text-gray-700 focus:outline-hidden"
+            value={change ?? ''}
+            onChange={setChange}
+            title="Change status in this PR"
+          >
+            <option value="">—</option>
+            {designChangeTypes.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
