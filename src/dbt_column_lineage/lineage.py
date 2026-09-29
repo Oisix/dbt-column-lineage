@@ -13,6 +13,28 @@ from dbt_column_lineage.looker import Looker
 from dbt_column_lineage.utils import get_dbt_project_dir
 
 
+def unwrap_exclude_columns(expression: Expression) -> Expression:
+    """Trino の `table(exclude_columns(input => table(x), columns => DESCRIPTOR(...)))` を `x` に置換する。
+    sqlglot はこの polymorphic table function の出力カラムを解決できず、上流の `SELECT *` が
+    展開されないため lineage が Placeholder で止まる。列を除外するだけなので、残りのカラムの
+    リネージは `x` を直接読んだ場合と同じになる。"""
+    for table in list(expression.find_all(exp.Table)):
+        fn = table.this
+        if not (isinstance(fn, exp.Anonymous) and fn.name.lower() == 'table' and fn.expressions):
+            continue
+        inner = fn.expressions[0]
+        if not (isinstance(inner, exp.Anonymous) and inner.name.lower() == 'exclude_columns'):
+            continue
+        source = next((k.expression for k in inner.expressions
+                       if isinstance(k, exp.Kwarg) and k.this.name.lower() == 'input'), None)
+        if not (isinstance(source, exp.Anonymous) and source.name.lower() == 'table' and source.expressions):
+            continue
+        ref = source.expressions[0]
+        name = ref.this if isinstance(ref, exp.Column) else exp.to_identifier(ref.name)
+        table.set('this', name.copy())
+    return expression
+
+
 class DbtSqlglot:
     _instance = None
 
@@ -726,7 +748,7 @@ class DbtSqlglot:
             after_next_sources_columns_dict = {}
         else:
             try:
-                parsed_sql = parse_one(dbt_compiled_code, dialect=self.dialect)
+                parsed_sql = unwrap_exclude_columns(parse_one(dbt_compiled_code, dialect=self.dialect))
             except SqlglotError:
                 self.logger.error(f'parse sql. source={next_source}')
                 parsed_sql = None
@@ -805,7 +827,7 @@ class DbtSqlglot:
 
             sqlglot_db_schema = self.__get_sqlglot_db_schema(depends_on_table_info)
             try:
-                parsed_sql = parse_one(ref_compiled_code, dialect=self.dialect)
+                parsed_sql = unwrap_exclude_columns(parse_one(ref_compiled_code, dialect=self.dialect))
                 sql_scope = self.__build_scope(parsed_sql, sqlglot_db_schema)
             except SqlglotError:
                 self.logger.error(f'parse sql. source={source}')
@@ -904,7 +926,7 @@ class DbtSqlglot:
         parsed_sql = None
 
         try:
-            parsed_sql = parse_one(compiled_code, dialect=self.dialect)
+            parsed_sql = unwrap_exclude_columns(parse_one(compiled_code, dialect=self.dialect))
         except SqlglotError:
             self.logger.error(f'parse sql. source={source}')
 
@@ -919,7 +941,7 @@ class DbtSqlglot:
                 lineage_tables.append(label.lower())
             lineage_meta = item['meta']
 
-        parsed_sql = parse_one(compiled_code, dialect=self.dialect)
+        parsed_sql = unwrap_exclude_columns(parse_one(compiled_code, dialect=self.dialect))
         ctes = parsed_sql.find_all(exp.CTE)
         for cte in ctes:
             dependencies[cte.alias_or_name] = []
