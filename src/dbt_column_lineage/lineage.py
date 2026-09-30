@@ -453,7 +453,7 @@ class DbtSqlglot:
                     cl = []
                 for c in cl:
                     self.logger.debug(f'alias_or_name={c.alias_or_name}')
-                    replace_columns.add(c.alias_or_name)
+                    replace_columns.add(c.alias_or_name.upper())
             # CTEリネージ用の追加情報
             if need_meta and not isinstance(node.expression, exp.Table):
                 if node.reference_node_name == '':
@@ -536,7 +536,7 @@ class DbtSqlglot:
                         cl = []
                     for c in cl:
                         self.logger.debug(f'alias_or_name={c.alias_or_name}')
-                        replace_columns.add(c.alias_or_name)
+                        replace_columns.add(c.alias_or_name.upper())
                 # CTEリネージ用の追加情報
                 if need_meta and not isinstance(node.expression, exp.Table):
                     if node.reference_node_name == '':
