@@ -10,6 +10,12 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Added
+- Python 3.15 (released 2026-10-09) is now tested in CI and declared in the
+  `pyproject` classifiers. Every runtime dependency already ships a cp315 or
+  pure-Python wheel, so nothing had to be pinned or built from source.
+  `requires-python` stays `>=3.11`.
+
 ### Security
 - Refreshed `frontend/package-lock.json` to clear the open Dependabot alerts
   (next 16.3.0 → 16.4.2, sharp → 0.35.5, js-yaml, browserslist, brace-expansion,
