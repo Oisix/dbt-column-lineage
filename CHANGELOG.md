@@ -10,36 +10,26 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+## [0.6.9] - 2026-10-22
+
+Maintenance release. Lineage is traced the same way as before, but on
+lowercase-normalizing dialects the upstream column names in the response are now
+upper-cased (see Fixed), so a client that compares them case-sensitively will see
+different strings than in 0.6.8.
+
+Clears every open Dependabot alert by refreshing the frontend lockfile, and
+fixes a backend suite that had been failing on `main` for every Python version
+after sqlglot made `lineage()`'s `schema` argument required (#108). Fixes
+duplicated upstream column rows on lowercase-normalizing dialects such as trino
+(#104, thanks to @CodeWithPravinMaske). Raises the `sqlglot` floor to 30.11 and
+documents why the CTE-label guard has to stay (#109). Adds Python 3.15 to the
+supported set (#110).
+
 ### Added
 - Python 3.15 (released 2026-10-09) is now tested in CI and declared in the
   `pyproject` classifiers. Every runtime dependency already ships a cp315 or
   pure-Python wheel, so nothing had to be pinned or built from source.
   `requires-python` stays `>=3.11`.
-
-### Security
-- Refreshed `frontend/package-lock.json` to clear the open Dependabot alerts
-  (next 16.3.0 → 16.4.2, sharp → 0.35.5, js-yaml, browserslist, brace-expansion,
-  baseline-browser-mapping, nanoid, source-map-js; react/react-dom → 19.3.1).
-  Lockfile only — no `package.json` range changed. The critical Next.js advisories
-  are in the Image Optimization API, `next/og` and the dev server, none of which a
-  static export (`output: 'export'`) served by FastAPI ever runs, so the published
-  wheel and image were not exposed; this is build-toolchain hygiene and closing the
-  alerts on a public repo.
-- Not fixable for now: five `braces` / `micromatch` / `fast-glob` advisories reached
-  through `eslint-config-next`. There is no patched `braces`, the only `npm audit fix`
-  path is a downgrade to `eslint-config-next` 14, and the chain is lint-time only —
-  it never ships in `frontend_out`.
-
-### Fixed
-- `test/unit/test_star_select_dedup.py` called `sqlglot.lineage()` without `schema`,
-  which became a required argument in sqlglot 30.2x. `pyproject` pins only a floor
-  (`sqlglot>=30,<31` at the time), so CI resolved the newest release and had been
-  failing on `main` for both tests on every Python version. Both production call
-  sites in `lineage.py` already pass `schema=`, so only the test needed updating.
-- On lowercase-normalizing dialects (trino, duckdb, ...) expanding an upstream column with (+)
-  no longer shows the same column twice (`insurancecardlist` and `INSURANCECARDLIST`). Upstream
-  column names are now upper-cased like the rest of the request path, so node rows and edge
-  handles always use one casing.
 
 ### Changed
 - CI now builds the frontend on Node 24 instead of Node 20 (end-of-life since
@@ -57,6 +47,31 @@ for the full history prior to this file.
   `FROM` over a CTE yields the CTE name. Removing the guard would surface those CTE
   names as table nodes. `test_cte_label_guard.py` (renamed from `test_phantom_cte.py`)
   now pins that path explicitly.
+
+### Fixed
+- `test/unit/test_star_select_dedup.py` called `sqlglot.lineage()` without `schema`,
+  which became a required argument in sqlglot 30.2x. `pyproject` pins only a floor
+  (`sqlglot>=30,<31` at the time), so CI resolved the newest release and had been
+  failing on `main` for both tests on every Python version. Both production call
+  sites in `lineage.py` already pass `schema=`, so only the test needed updating.
+- On lowercase-normalizing dialects (trino, duckdb, ...) expanding an upstream column with (+)
+  no longer shows the same column twice (`insurancecardlist` and `INSURANCECARDLIST`). Upstream
+  column names are now upper-cased like the rest of the request path, so node rows and edge
+  handles always use one casing.
+
+### Security
+- Refreshed `frontend/package-lock.json` to clear the open Dependabot alerts
+  (next 16.3.0 → 16.4.2, sharp → 0.35.5, js-yaml, browserslist, brace-expansion,
+  baseline-browser-mapping, nanoid, source-map-js; react/react-dom → 19.3.1).
+  Lockfile only — no `package.json` range changed. The critical Next.js advisories
+  are in the Image Optimization API, `next/og` and the dev server, none of which a
+  static export (`output: 'export'`) served by FastAPI ever runs, so the published
+  wheel and image were not exposed; this is build-toolchain hygiene and closing the
+  alerts on a public repo.
+- Not fixable for now: five `braces` / `micromatch` / `fast-glob` advisories reached
+  through `eslint-config-next`. There is no patched `braces`, the only `npm audit fix`
+  path is a downgrade to `eslint-config-next` 14, and the chain is lint-time only —
+  it never ships in `frontend_out`.
 
 ## [0.6.8] - 2026-09-25
 
