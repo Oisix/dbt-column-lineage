@@ -45,11 +45,11 @@ select * from final
 
 def test_sqlglot_leaf_is_select_not_table():
     # Control case: without this, the bug wouldn't reproduce at all. This is
-    # sqlglot's own raw behavior — with no schema given, a wildcard + window
+    # sqlglot's own raw behavior — with an empty schema, a wildcard + window
     # function combination terminates on Select, not Table. dbt_column_lineage
     # doesn't pass a schema for internal CTEs either, so production hits the
     # same path.
-    node = lineage("doctor_name", DEDUP_SQL, dialect="trino")
+    node = lineage("doctor_name", DEDUP_SQL, schema={}, dialect="trino")
     leaves = [n for n in node.walk() if not n.downstream]
     assert leaves, "expected at least one leaf node"
     assert all(isinstance(n.expression, exp.Select) for n in leaves), (
@@ -62,7 +62,7 @@ def test_star_select_label_resolves_to_underlying_table(dbt):
     # __resolve_star_select_label expects a single Select node's expression, not the
     # lineage Node wrapper — exercise it the same way __extract_lineage_node does,
     # via the leaf node's own `.expression`.
-    node = lineage("doctor_name", DEDUP_SQL, dialect="trino")
+    node = lineage("doctor_name", DEDUP_SQL, schema={}, dialect="trino")
     leaf = next(n for n in node.walk() if not n.downstream)
     label = dbt._DbtSqlglot__resolve_star_select_label(leaf.expression)
     # Uses Table.name (not a raw f-string of .this), so a quoted identifier's

@@ -24,6 +24,13 @@ for the full history prior to this file.
   path is a downgrade to `eslint-config-next` 14, and the chain is lint-time only —
   it never ships in `frontend_out`.
 
+### Fixed
+- `test/unit/test_star_select_dedup.py` called `sqlglot.lineage()` without `schema`,
+  which became a required argument in sqlglot 30.2x. `pyproject` pins only a floor
+  (`sqlglot>=30,<31`), so CI resolves the newest release and had been failing on
+  `main` for both tests on every Python version. Both production call sites in
+  `lineage.py` already pass `schema=`, so only the test needed updating.
+
 ### Changed
 - CI now builds the frontend on Node 24 instead of Node 20 (end-of-life since
   April 2026), matching the `node:24` stage in the `Dockerfile`, and bumps the

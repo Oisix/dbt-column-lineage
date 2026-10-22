@@ -64,7 +64,9 @@ The `dbt-column-lineage` entrypoint (`main.cli`, Typer) has commands: `run` (lau
 A local virtualenv lives at **`.venv/`** (gitignored) with the backend deps (`sqlglot`, `fastapi`, …) and `pytest` already installed. Run the suite through it — the system `python3` does **not** have `sqlglot`, so `python3 -m pytest` fails at import collection:
 
 ```bash
-.venv/bin/python -m pytest test/unit -q   # 27 passing on sqlglot >=30.11 (26 + 1 skipped below); testpaths = ["test/unit"] (see pyproject)
+.venv/bin/python -m pytest test/unit -q   # 39 passing on sqlglot 30.24; testpaths = ["test/unit"] (see pyproject)
+# Keep .venv's sqlglot current (pip install -U "sqlglot<31"): pyproject pins only a floor,
+# so CI resolves the newest <31 and a stale .venv can pass locally while CI fails.
 # fresh env instead: pip install -e ".[dev]" then pytest
 ```
 
