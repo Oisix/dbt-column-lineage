@@ -11,7 +11,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["dbt", "lineage", "column-lineage", "sqlglot", "data-lineage", "snowflake"]
 dependencies = [
-    "sqlglot>=30,<31",
+    "sqlglot>=30.11,<31",
     "fastapi>=0.115",
     "uvicorn>=0.30",
     "requests>=2.31",

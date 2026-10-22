@@ -6,19 +6,15 @@ columns to the columns listed in `IN (...)`; it terminated at the input
 relation with a column that does not exist there (a "phantom"). #7727 was
 fixed in sqlglot 30.11.0 — this guard originally asserted the broken
 behavior and fired on that release; it now asserts the fixed behavior so a
-re-regression is caught.
+re-regression is caught. `pyproject` requires >=30.11, so it always runs.
 
-Note `DbtSqlglot`'s phantom-CTE filter in lineage.py is still in place: the
-package allows sqlglot >=30,<31 (pyproject), so installs on <30.11 still
-produce phantoms. Drop the filter when the lower bound moves past 30.11.
+`DbtSqlglot`'s `__is_cte_only_label` guard stays, but for an unrelated
+reason: `__resolve_star_select_label` can hand back a CTE name. See
+`test_cte_label_guard.py`.
 """
-import pytest
-import sqlglot
 from sqlglot import exp
 from sqlglot.lineage import lineage
 
-
-SQLGLOT_VERSION = tuple(int(p) for p in sqlglot.__version__.split(".")[:2])
 
 UNPIVOT_SQL = """
 WITH src AS (
@@ -36,10 +32,6 @@ def _leaf_table_names(col):
             if isinstance(n.expression, exp.Table) and not n.downstream]
 
 
-@pytest.mark.skipif(
-    SQLGLOT_VERSION < (30, 11),
-    reason="sqlglot <30.11 has the #7727 UNPIVOT limitation (handled by the phantom-CTE filter)",
-)
 def test_unpivot_value_column_fans_out_to_sources():
     # sqlglot 30.11.0 (#7727 修正後): score は UNPIVOT の IN (...) に列挙された
     # 元列 sales.jan / sales.feb まで正しく展開される。

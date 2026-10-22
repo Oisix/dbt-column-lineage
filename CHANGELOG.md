@@ -27,14 +27,26 @@ for the full history prior to this file.
 ### Fixed
 - `test/unit/test_star_select_dedup.py` called `sqlglot.lineage()` without `schema`,
   which became a required argument in sqlglot 30.2x. `pyproject` pins only a floor
-  (`sqlglot>=30,<31`), so CI resolves the newest release and had been failing on
-  `main` for both tests on every Python version. Both production call sites in
-  `lineage.py` already pass `schema=`, so only the test needed updating.
+  (`sqlglot>=30,<31` at the time), so CI resolved the newest release and had been
+  failing on `main` for both tests on every Python version. Both production call
+  sites in `lineage.py` already pass `schema=`, so only the test needed updating.
 
 ### Changed
 - CI now builds the frontend on Node 24 instead of Node 20 (end-of-life since
   April 2026), matching the `node:24` stage in the `Dockerfile`, and bumps the
   `actions/setup-node` pin to v7.1.0.
+- `pyproject` now requires `sqlglot>=30.11,<31` (was `>=30`). 30.11.0 is where
+  sqlglot#7727 (UNPIVOT lineage) was fixed, so the regression guard in
+  `test_sqlglot_unpivot_regression.py` no longer needs its `skipif` and always runs.
+- The phantom-CTE filter is renamed `__is_cte_only_label` and documented as what it
+  actually is: a guard against drawing a node for a lineage leaf that resolves to a
+  CTE rather than a real relation. `CLAUDE.md` previously said the filter could be
+  dropped once the floor passed 30.11; that was wrong. It also covers a second path
+  unrelated to #7727 — `__resolve_star_select_label` walks a star-select's `FROM` and
+  returns its name, and a CTE reference is an `exp.Table` in sqlglot's AST, so a
+  `FROM` over a CTE yields the CTE name. Removing the guard would surface those CTE
+  names as table nodes. `test_cte_label_guard.py` (renamed from `test_phantom_cte.py`)
+  now pins that path explicitly.
 
 ## [0.6.8] - 2026-09-25
 

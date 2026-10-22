@@ -64,13 +64,13 @@ The `dbt-column-lineage` entrypoint (`main.cli`, Typer) has commands: `run` (lau
 A local virtualenv lives at **`.venv/`** (gitignored) with the backend deps (`sqlglot`, `fastapi`, …) and `pytest` already installed. Run the suite through it — the system `python3` does **not** have `sqlglot`, so `python3 -m pytest` fails at import collection:
 
 ```bash
-.venv/bin/python -m pytest test/unit -q   # 39 passing on sqlglot 30.24; testpaths = ["test/unit"] (see pyproject)
-# Keep .venv's sqlglot current (pip install -U "sqlglot<31"): pyproject pins only a floor,
-# so CI resolves the newest <31 and a stale .venv can pass locally while CI fails.
+.venv/bin/python -m pytest test/unit -q   # 40 passing on sqlglot 30.24; testpaths = ["test/unit"] (see pyproject)
+# Keep .venv's sqlglot current (pip install -U "sqlglot>=30.11,<31"): pyproject pins only a
+# floor, so CI resolves the newest <31 and a stale .venv can pass locally while CI fails.
 # fresh env instead: pip install -e ".[dev]" then pytest
 ```
 
-`test/unit/` runs without a real dbt project/warehouse: `conftest.py` points `DbtSqlglot` at a tiny synthetic `manifest.json`/`catalog.json` under `test/unit/fixtures/target/` via `DBT_PROJECT_DIR`, and resets the `DbtSqlglot._instance` singleton per test. Current coverage centers on the **phantom-CTE filter** (the UNPIVOT lineage workaround for sqlglot#7727). **sqlglot#7727 was fixed in sqlglot 30.11.0**: the regression guard (`test_sqlglot_unpivot_regression.py`) now asserts the *fixed* fan-out behavior (skipped on sqlglot <30.11), and the filter is kept only because `pyproject` still allows `sqlglot>=30,<31` — drop it when the lower bound moves past 30.11.
+`test/unit/` runs without a real dbt project/warehouse: `conftest.py` points `DbtSqlglot` at a tiny synthetic `manifest.json`/`catalog.json` under `test/unit/fixtures/target/` via `DBT_PROJECT_DIR`, and resets the `DbtSqlglot._instance` singleton per test. Current coverage centers on the **CTE-only label guard** (`__is_cte_only_label`, `test_cte_label_guard.py`): a lineage leaf that resolves to a CTE which is not also a real dbt object is dropped, so no node is drawn for a relation that does not exist. **Do not remove this guard.** It originally worked around sqlglot#7727 (UNPIVOT lineage leaking its input CTE as a table leaf), which was **fixed in sqlglot 30.11.0** and is no longer reachable now that `pyproject` requires `sqlglot>=30.11,<31` — but it also covers a second, unrelated path that is still live: `__resolve_star_select_label` walks a star-select's `FROM` and returns its name, and a CTE reference is an `exp.Table` in sqlglot's AST, so a `FROM` over a CTE yields the CTE name. The regression guard (`test_sqlglot_unpivot_regression.py`) asserts the *fixed* #7727 fan-out behavior and always runs (the old `skipif` on sqlglot <30.11 is gone).
 
 **CI** (`.github/workflows/ci.yml`) gates every PR and push to main: backend pytest on Python 3.11/3.12/3.13/3.14 (installed via `pip install -e ".[dev]"`, which also validates `[project.dependencies]` resolves) and frontend `npm run lint` + `npm run build`.
 
