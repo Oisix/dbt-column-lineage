@@ -10,6 +10,12 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Fixed
+- Column lineage no longer stops dead at a Trino `table(exclude_columns(input => table(x), columns => DESCRIPTOR(...)))`
+  polymorphic table function. sqlglot can't resolve its output columns, so a `SELECT *` over it never
+  expanded and every column terminated on a Placeholder (no upstream node/edge). It is now rewritten to
+  `(SELECT * EXCEPT (...) FROM x)` before lineage runs, keeping `x`'s qualifiers and the excluded-column set.
+
 ## [0.6.9] - 2026-10-22
 
 Maintenance release. Lineage is traced the same way as before, but on
