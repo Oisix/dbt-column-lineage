@@ -1,4 +1,4 @@
-FROM node:24 AS node-builder
+FROM node:26 AS node-builder
 WORKDIR /frontend
 
 ARG NEXT_PUBLIC_USE_LOOKER

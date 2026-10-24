@@ -10,6 +10,14 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Changed
+- The frontend is now built on Node 26 instead of Node 24, in both the `Dockerfile`
+  builder stage and CI. Node 26 is the current even-numbered line (released
+  2026-05-05) and enters Active LTS at the end of October 2026, which drops Node 24
+  to Maintenance. Node is build-time only here — the wheel and the runtime image ship
+  the static export and no Node at all — so nothing changes at runtime; this only
+  lines the build up with the `@types/node: ^26` the frontend already depends on.
+
 ### Fixed
 - Column lineage no longer stops dead at a Trino `table(exclude_columns(input => table(x), columns => DESCRIPTOR(...)))`
   polymorphic table function. sqlglot can't resolve its output columns, so a `SELECT *` over it never
