@@ -31,6 +31,12 @@
   /* 既定のアクセント色。BRAND_PRIMARY_COLOR 指定時は BrandProvider が実行時に上書きする */
   --brand: #007bf5;
   --primary: 0,123,245;
+  /* テーブル種別(materialized)ごとのノードヘッダ色。BRAND_PRIMARY_COLOR 指定時は同色相の濃淡に置き換わる */
+  --node-table: #e6e6fa;
+  --node-view: #f0e6ff;
+  --node-incremental: #add8e6;
+  --node-snapshot: #c7d2fe;
+  --node-seed: #ddd6fe;
 }
 
 .markdown {

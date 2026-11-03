@@ -35,6 +35,10 @@ export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (b.primaryColor) {
           root.style.setProperty('--brand', b.primaryColor)
           root.style.setProperty('--primary', hexToRgbTriplet(b.primaryColor))
+          // ノード種別色はブランド色の濃淡(判別できるよう強さを変える)
+          const tint = (pct: number) => `color-mix(in srgb, ${b.primaryColor} ${pct}%, white)`
+          Object.entries({ table: 12, view: 6, incremental: 38, snapshot: 24, seed: 18 }).forEach(([type, pct]) =>
+            root.style.setProperty(`--node-${type}`, tint(pct)))
         }
         if (b.fontUrl) {
           const link = document.createElement('link')
