@@ -43,7 +43,7 @@ const formatGroupLabel = (data: {label: string, options: []}) => {
         <span>{data.label}</span>
       </div>
       <div className="ml-auto"><span
-        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{data.options.length}</span>
+        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-soft text-brand">{data.options.length}</span>
       </div>
     </div>
   )

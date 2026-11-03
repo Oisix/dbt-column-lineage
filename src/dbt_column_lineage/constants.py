@@ -33,3 +33,12 @@ SESSION_SECRET = os.getenv('SESSION_SECRET')
 # コストが深さでなく横幅(ハブ列の全下流など)の場合に効く本命の保護。本番では
 # ゲートウェイのリクエストタイムアウト未満に設定し、504 でなく 200+truncated を返す。
 MAX_LINEAGE_SECONDS = float(os.getenv('MAX_LINEAGE_SECONDS', '-1'))
+
+# ブランディング(実行時に指定。フロントは起動時に /api/v1/branding から取得して反映する)。
+# いずれも任意で、未設定なら従来どおりの見た目(青・ロゴなし)。
+BRAND_NAME = os.getenv('BRAND_NAME')                    # ヘッダー/ログイン画面/タブのタイトル
+BRAND_LOGO_URL = os.getenv('BRAND_LOGO_URL')            # ヘッダーとログイン画面のロゴ(https URL か / 始まりのパス)
+BRAND_FAVICON_URL = os.getenv('BRAND_FAVICON_URL')      # ファビコン
+BRAND_PRIMARY_COLOR = os.getenv('BRAND_PRIMARY_COLOR')  # アクセント色(#rgb / #rrggbb)
+BRAND_FONT_URL = os.getenv('BRAND_FONT_URL')            # Web フォントの CSS (例: Google Fonts の https URL)
+BRAND_FONT_FAMILY = os.getenv('BRAND_FONT_FAMILY')      # font-family の値 (例: Manrope, Helvetica, sans-serif)

@@ -3,7 +3,10 @@
 @plugin 'tailwind-scrollbar';
 
 @theme {
-  --color-primary: var(--primary);
+  --color-primary: rgb(var(--primary));
+  --color-brand: var(--brand);
+  --color-brand-hover: color-mix(in srgb, var(--brand) 85%, black);
+  --color-brand-soft: color-mix(in srgb, var(--brand) 10%, white);
 }
 
 /*
@@ -25,6 +28,8 @@
 }
 
 :root {
+  /* 既定のアクセント色。BRAND_PRIMARY_COLOR 指定時は BrandProvider が実行時に上書きする */
+  --brand: #007bf5;
   --primary: 0,123,245;
 }
 

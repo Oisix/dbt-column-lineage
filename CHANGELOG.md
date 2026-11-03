@@ -10,7 +10,18 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Added
+- Runtime branding. Set `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_FAVICON_URL`, `BRAND_PRIMARY_COLOR`,
+  `BRAND_FONT_URL` and `BRAND_FONT_FAMILY` to show your company's logo, name, accent colour and font in
+  the header, login page, favicon and tab title. They are served by a new unauthenticated
+  `GET /api/v1/branding` and applied by the frontend at load, so no rebuild is needed (unlike
+  `NEXT_PUBLIC_*`). Malformed values (non-https URLs, non-hex colours, unsafe font families) are dropped.
+  All unset keeps the previous look.
+
 ### Changed
+- Refreshed the UI: a header with the logo (or the name when no logo is set) and a pill view switcher, rounded table cards with a brand-coloured
+  selection ring, and a softer canvas. The accent colour now comes from the brand colour (default unchanged blue).
+- Fixed `text-primary` in the search selects, which never applied (it expanded to an invalid `color: 0,123,245`).
 - The frontend is now built on Node 26 instead of Node 24, in both the `Dockerfile`
   builder stage and CI. Node 26 is the current even-numbered line (released
   2026-05-05) and enters Active LTS at the end of October 2026, which drops Node 24

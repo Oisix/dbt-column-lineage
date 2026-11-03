@@ -68,8 +68,8 @@ const TableNodeFrame: React.FC<TableNodeFrameProps> = ({schema, tableName, selec
 
   return (
     <div
-      className={`flex flex-col bg-white transition-all duration-250 ease-in-out border-0 border-solid border-gray-300 text-sm 
-      ${selected ? 'shadow-lg' : 'shadow-md'}`}
+      className={`flex flex-col overflow-hidden rounded-lg bg-white transition-all duration-250 ease-in-out border border-solid border-gray-200 text-sm 
+      ${selected ? 'shadow-lg ring-2 ring-brand' : 'shadow-md'}`}
     >
       <div
         className={`relative py-2 px-3 flex items-center justify-between ${colorClass}`}

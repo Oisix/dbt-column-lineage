@@ -244,3 +244,18 @@ Since the page renders without any interaction, a headless browser can also scre
 ```
 
 This works for any `/cl` view (a `sources`/`selectedColumns` lineage URL too), but pairs best with `?design=` since that path needs no warehouse and no API call.
+
+## Branding
+
+Show your company's logo, name, colour and font by setting environment variables on the server (no frontend rebuild):
+
+| Variable | Example | Used for |
+|---|---|---|
+| `BRAND_NAME` | `Acme Analytics` | header and login page (only when no logo is set; the logo replaces it), tab title |
+| `BRAND_LOGO_URL` | `https://cdn.example.com/logo.svg` | header and login page (`https://` URL or `/path`) |
+| `BRAND_FAVICON_URL` | `https://cdn.example.com/favicon.png` | browser tab icon |
+| `BRAND_PRIMARY_COLOR` | `#7737ab` | buttons, toggles, selection ring (`#rgb` or `#rrggbb`) |
+| `BRAND_FONT_URL` | `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap` | stylesheet that loads the font |
+| `BRAND_FONT_FAMILY` | `Manrope, Helvetica, sans-serif` | `font-family` for the UI |
+
+Invalid values are ignored. Unset keeps the default look.
