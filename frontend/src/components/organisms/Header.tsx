@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { SearchDialog } from '@/components/ui/SearchDialog'
+import ThemePicker from '@/components/ui/ThemePicker'
 import { useStore as useStoreZustand } from '@/store/zustand'
 import { AlertTriangle, Check, Info, Loader, Search } from 'lucide-react'
 import Markdown from 'react-markdown'
@@ -68,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ handleFetchData }) => {
           </div>
         </div>
       )}
-      <header className="bg-white/90 backdrop-blur border-b shadow-xs">
+      <header className="relative z-30 bg-white border-b shadow-xs">
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
           <div className="flex items-center gap-3">
             {brand.logoUrl && (
@@ -108,6 +109,9 @@ export const Header: React.FC<HeaderProps> = ({ handleFetchData }) => {
               )}
               <span>{loading ? 'Loading...' : 'Search'}</span>
             </button>
+          </div>
+          <div className="ml-auto">
+            <ThemePicker />
           </div>
         </nav>
       </header>

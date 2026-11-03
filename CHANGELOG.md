@@ -11,12 +11,16 @@ for the full history prior to this file.
 ## [Unreleased]
 
 ### Added
-- Runtime branding. Set `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_FAVICON_URL`, `BRAND_PRIMARY_COLOR`,
-  `BRAND_FONT_URL` and `BRAND_FONT_FAMILY` to show your company's logo, name, accent colour and font in
+- Runtime branding. Put a `brand.json` next to the app (or point `BRAND_CONFIG` at one), and/or set
+  `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_FAVICON_URL`, `BRAND_PRIMARY_COLOR`,
+  `BRAND_FONT_URL` and `BRAND_FONT_FAMILY` (env vars override the file per key) to show your company's logo, name, accent colour and font in
   the header, login page, favicon and tab title. They are served by a new unauthenticated
   `GET /api/v1/branding` and applied by the frontend at load, so no rebuild is needed (unlike
   `NEXT_PUBLIC_*`). Malformed values (non-https URLs, non-hex colours, unsafe font families) are dropped.
   All unset keeps the previous look.
+
+- A theme colour picker in the header: eight presets or a custom colour, remembered per browser and taking
+  priority over the server's brand colour, with a reset.
 
 ### Changed
 - Refreshed the UI: a header with the logo (or the name when no logo is set) and a pill view switcher, rounded table cards with a brand-coloured

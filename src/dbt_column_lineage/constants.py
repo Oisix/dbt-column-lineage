@@ -36,9 +36,12 @@ MAX_LINEAGE_SECONDS = float(os.getenv('MAX_LINEAGE_SECONDS', '-1'))
 
 # ブランディング(実行時に指定。フロントは起動時に /api/v1/branding から取得して反映する)。
 # いずれも任意で、未設定なら従来どおりの見た目(青・ロゴなし)。
+# まとめて指定するなら JSON ファイル(既定: カレントの brand.json。無ければ無視)。キーは下の BRAND_* と
+# 1:1 (name, logoUrl, faviconUrl, primaryColor, fontUrl, fontFamily)。個別の環境変数はファイルより優先。
+BRAND_CONFIG = os.getenv('BRAND_CONFIG', 'brand.json')
 BRAND_NAME = os.getenv('BRAND_NAME')                    # ヘッダー/ログイン画面/タブのタイトル
 BRAND_LOGO_URL = os.getenv('BRAND_LOGO_URL')            # ヘッダーとログイン画面のロゴ(https URL か / 始まりのパス)
 BRAND_FAVICON_URL = os.getenv('BRAND_FAVICON_URL')      # ファビコン
 BRAND_PRIMARY_COLOR = os.getenv('BRAND_PRIMARY_COLOR')  # アクセント色(#rgb / #rrggbb)
 BRAND_FONT_URL = os.getenv('BRAND_FONT_URL')            # Web フォントの CSS (例: Google Fonts の https URL)
-BRAND_FONT_FAMILY = os.getenv('BRAND_FONT_FAMILY')      # font-family の値 (例: Manrope, Helvetica, sans-serif)
+BRAND_FONT_FAMILY = os.getenv('BRAND_FONT_FAMILY')      # font-family の値 (例: Inter, Helvetica, sans-serif)

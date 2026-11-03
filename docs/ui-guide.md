@@ -247,15 +247,36 @@ This works for any `/cl` view (a `sources`/`selectedColumns` lineage URL too), b
 
 ## Branding
 
-Show your company's logo, name, colour and font by setting environment variables on the server (no frontend rebuild):
+Show your company's logo, name, colour and font. Everything is optional, and nothing needs a frontend rebuild.
 
-| Variable | Example | Used for |
+The simplest way is one `brand.json` that you mount next to the app (the server reads `brand.json` from its working directory, or the path in `BRAND_CONFIG`):
+
+```json
+{
+  "name": "Acme Analytics",
+  "logoUrl": "https://cdn.example.com/logo.svg",
+  "faviconUrl": "https://cdn.example.com/favicon.png",
+  "primaryColor": "#0f766e",
+  "fontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+  "fontFamily": "Inter, Helvetica, sans-serif"
+}
+```
+
+```bash
+docker run -p 5000:5000 -v "$PWD/brand.json:/app/brand.json:ro" your-image
+```
+
+| Key (`brand.json`) | Env var (overrides the file) | Used for |
 |---|---|---|
-| `BRAND_NAME` | `Acme Analytics` | header and login page (only when no logo is set; the logo replaces it), tab title |
-| `BRAND_LOGO_URL` | `https://cdn.example.com/logo.svg` | header and login page (`https://` URL or `/path`) |
-| `BRAND_FAVICON_URL` | `https://cdn.example.com/favicon.png` | browser tab icon |
-| `BRAND_PRIMARY_COLOR` | `#7737ab` | buttons, toggles, selection ring (`#rgb` or `#rrggbb`) |
-| `BRAND_FONT_URL` | `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap` | stylesheet that loads the font |
-| `BRAND_FONT_FAMILY` | `Manrope, Helvetica, sans-serif` | `font-family` for the UI |
+| `name` | `BRAND_NAME` | header and login page (only when no logo is set; the logo replaces it), tab title |
+| `logoUrl` | `BRAND_LOGO_URL` | header and login page (`https://` URL or `/path`) |
+| `faviconUrl` | `BRAND_FAVICON_URL` | browser tab icon |
+| `primaryColor` | `BRAND_PRIMARY_COLOR` | buttons, toggles, selection ring, node-type header tints (`#rgb` or `#rrggbb`) |
+| `fontUrl` | `BRAND_FONT_URL` | stylesheet that loads the font |
+| `fontFamily` | `BRAND_FONT_FAMILY` | `font-family` for the UI |
 
-Invalid values are ignored. Unset keeps the default look.
+### Theme colour picker
+
+The palette button at the right of the header lets any user pick their own accent colour (eight presets or a custom colour). The choice is saved in that browser (`localStorage`) and wins over `primaryColor`; **Reset to default** returns to the server's colour. It also recolours the table-type header tints.
+
+Invalid values (and a missing or malformed file) are ignored; unset keeps the default look. The same values are served unauthenticated at `GET /api/v1/branding`, because the login page needs them.

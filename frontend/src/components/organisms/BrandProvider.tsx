@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 export interface Brand {
   name?: string
@@ -10,10 +10,20 @@ export interface Brand {
   fontFamily?: string
 }
 
+interface ThemeColor {
+  color: string | null // 利用者が選んだ色(未選択なら null = サーバー設定/既定色)
+  setColor: (color: string | null) => void
+}
+
 const BrandContext = createContext<Brand>({})
+const ThemeColorContext = createContext<ThemeColor>({ color: null, setColor: () => {} })
 export const useBrand = () => useContext(BrandContext)
+export const useThemeColor = () => useContext(ThemeColorContext)
 
 export const DEFAULT_APP_NAME = 'dbt column lineage'
+export const DEFAULT_PRIMARY_COLOR = '#007bf5'
+const STORAGE_KEY = 'dbt-column-lineage:theme-color'
+const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
 
 // '#rgb' / '#rrggbb' -> 'r,g,b'(Select の rgba(var(--primary), …) が使う形式)
 const hexToRgbTriplet = (hex: string): string => {
@@ -21,25 +31,56 @@ const hexToRgbTriplet = (hex: string): string => {
   return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)).join(',')
 }
 
-// バックエンドの BRAND_* (/api/v1/branding) を実行時に取得して CSS 変数・フォント・ファビコン・タイトルへ反映する。
-// 取得に失敗しても既定の見た目のまま動く(ブランド設定は任意)。
+const NODE_TINTS = { table: 12, view: 6, incremental: 38, snapshot: 24, seed: 18 }
+const THEME_VARS = ['--brand', '--primary', ...Object.keys(NODE_TINTS).map((t) => `--node-${t}`)]
+
+// 色を CSS 変数へ反映する。null なら global.css の既定値に戻す。
+const applyPrimaryColor = (color: string | null) => {
+  const root = document.documentElement
+  if (!color) {
+    THEME_VARS.forEach((v) => root.style.removeProperty(v))
+    return
+  }
+  root.style.setProperty('--brand', color)
+  root.style.setProperty('--primary', hexToRgbTriplet(color))
+  // ノード種別色はブランド色の濃淡(判別できるよう強さを変える)
+  Object.entries(NODE_TINTS).forEach(([type, pct]) =>
+    root.style.setProperty(`--node-${type}`, `color-mix(in srgb, ${color} ${pct}%, white)`))
+}
+
+// ブランド設定(/api/v1/branding)を実行時に取得して反映し、利用者が選んだテーマ色を localStorage に覚える。
+// 優先順位: 利用者が選んだ色 > サーバーのブランド色 > 既定色。取得失敗や localStorage 不可でも既定の見た目で動く。
 export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [brand, setBrand] = useState<Brand>({})
+  const [userColor, setUserColor] = useState<string | null>(null)
+
+  // マウント時に保存済みのテーマ色を読む(SSG のため初期描画では読めない)
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved && HEX.test(saved)) setUserColor(saved)
+    } catch {}
+  }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const setColor = useCallback((color: string | null) => {
+    setUserColor(color)
+    try {
+      if (color) localStorage.setItem(STORAGE_KEY, color)
+      else localStorage.removeItem(STORAGE_KEY)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    applyPrimaryColor(userColor ?? brand.primaryColor ?? null)
+  }, [userColor, brand.primaryColor])
 
   useEffect(() => {
     const hostName = process.env.NEXT_PUBLIC_API_HOSTNAME || ''
     fetch(`${hostName}/api/v1/branding`)
       .then((res) => (res.ok ? res.json() : {}))
       .then((b: Brand) => {
-        const root = document.documentElement
-        if (b.primaryColor) {
-          root.style.setProperty('--brand', b.primaryColor)
-          root.style.setProperty('--primary', hexToRgbTriplet(b.primaryColor))
-          // ノード種別色はブランド色の濃淡(判別できるよう強さを変える)
-          const tint = (pct: number) => `color-mix(in srgb, ${b.primaryColor} ${pct}%, white)`
-          Object.entries({ table: 12, view: 6, incremental: 38, snapshot: 24, seed: 18 }).forEach(([type, pct]) =>
-            root.style.setProperty(`--node-${type}`, tint(pct)))
-        }
         if (b.fontUrl) {
           const link = document.createElement('link')
           link.rel = 'stylesheet'
@@ -68,5 +109,9 @@ export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .catch(() => {})
   }, [])
 
-  return <BrandContext.Provider value={brand}>{children}</BrandContext.Provider>
+  return (
+    <BrandContext.Provider value={brand}>
+      <ThemeColorContext.Provider value={{ color: userColor, setColor }}>{children}</ThemeColorContext.Provider>
+    </BrandContext.Provider>
+  )
 }
