@@ -19,6 +19,7 @@ from requests.auth import HTTPBasicAuth
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from dbt_column_lineage.branding import build_branding
 from dbt_column_lineage.constants import USE_OAUTH, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, BASE_ROUTE, SESSION_SECRET, CORS_ALLOW_ORIGINS
 from dbt_column_lineage.lineage import DbtSqlglot
 from dbt_column_lineage.looker import Looker
@@ -68,6 +69,12 @@ async def get_current_user(request: Request):
 @app.get('/healthcheck')
 async def readiness_probe():
     return 'ok!'
+
+
+# ログイン画面でも使うので認証なし(中身は公開前提の表示設定のみ)
+@app.get(f'{BASE_ROUTE}/branding')
+async def branding():
+    return build_branding()
 
 
 @app.exception_handler(404)

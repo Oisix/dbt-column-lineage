@@ -244,3 +244,39 @@ Since the page renders without any interaction, a headless browser can also scre
 ```
 
 This works for any `/cl` view (a `sources`/`selectedColumns` lineage URL too), but pairs best with `?design=` since that path needs no warehouse and no API call.
+
+## Branding
+
+Show your company's logo, name, colour and font. Everything is optional, and nothing needs a frontend rebuild.
+
+The simplest way is one `brand.json` that you mount next to the app (the server reads `brand.json` from its working directory, or the path in `BRAND_CONFIG`):
+
+```json
+{
+  "name": "Acme Analytics",
+  "logoUrl": "https://cdn.example.com/logo.svg",
+  "faviconUrl": "https://cdn.example.com/favicon.png",
+  "primaryColor": "#0f766e",
+  "fontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+  "fontFamily": "Inter, Helvetica, sans-serif"
+}
+```
+
+```bash
+docker run -p 5000:5000 -v "$PWD/brand.json:/app/brand.json:ro" your-image
+```
+
+| Key (`brand.json`) | Env var (overrides the file) | Used for |
+|---|---|---|
+| `name` | `BRAND_NAME` | header and login page (only when no logo is set; the logo replaces it), tab title |
+| `logoUrl` | `BRAND_LOGO_URL` | header and login page (`https://` URL or `/path`) |
+| `faviconUrl` | `BRAND_FAVICON_URL` | browser tab icon |
+| `primaryColor` | `BRAND_PRIMARY_COLOR` | buttons, toggles, selection ring, node-type header tints (`#rgb` or `#rrggbb`) |
+| `fontUrl` | `BRAND_FONT_URL` | stylesheet that loads the font |
+| `fontFamily` | `BRAND_FONT_FAMILY` | `font-family` for the UI |
+
+### Theme colour picker
+
+The palette button at the right of the header lets any user pick their own accent colour (eight presets or a custom colour). The choice is saved in that browser (`localStorage`) and wins over `primaryColor`; **Reset to default** returns to the server's colour. It also recolours the table-type header tints.
+
+Invalid values (and a missing or malformed file) are ignored; unset keeps the default look. The same values are served unauthenticated at `GET /api/v1/branding`, because the login page needs them.

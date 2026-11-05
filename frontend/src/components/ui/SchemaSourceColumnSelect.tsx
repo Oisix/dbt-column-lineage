@@ -261,7 +261,7 @@ export const SchemaSourceColumnSelect: React.FC<HeaderProps> = ({handleFetchData
               type="button"
               className={`px-4 py-2 text-sm font-medium border flex items-center whitespace-nowrap ${
                 (searchShowColumn ? 'column' : 'table') === button.id
-                  ? 'bg-blue-500 text-white border-blue-600'
+                  ? 'bg-brand text-white border-brand'
                   : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
               } ${
                 button.id === 'table'
@@ -306,7 +306,7 @@ export const SchemaSourceColumnSelect: React.FC<HeaderProps> = ({handleFetchData
                 className={clsx(
                   'px-3 py-1 rounded-md text-sm font-medium',
                   source === activeSource
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-brand text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
                 )}
                 onClick={() => changeActiveSource(source)}

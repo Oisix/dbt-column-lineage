@@ -81,7 +81,7 @@ export const SearchDialog: React.FC<HeaderProps> = ({handleFetchData}) => {
                       onClick={() => changeSourceMode(tab.id as SourceModeType)}
                       className={`px-3 py-1.5 rounded-t transition-colors duration-150 relative ${
                         sourceMode === tab.id
-                          ? 'bg-blue-500 text-white shadow-xs font-medium'
+                          ? 'bg-brand text-white shadow-xs font-medium'
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >

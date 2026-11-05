@@ -246,7 +246,7 @@ export const Cl = () => {
             {showLoadingOverlay && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
                 <div className="flex flex-col items-center rounded-lg bg-white px-6 py-4 shadow-lg border border-gray-200">
-                  <Loader className="animate-spin text-blue-600" size={28} />
+                  <Loader className="animate-spin text-brand" size={28} />
                   <span className="mt-2 text-sm font-medium text-gray-700">Loading…</span>
                   <span className="mt-1 text-xs text-gray-500">The first load can take a while for some models</span>
                 </div>
@@ -286,7 +286,7 @@ export const Cl = () => {
                         type="checkbox"
                         checked={leftMaxDepth}
                         onChange={() => setLeftMaxDepth(!leftMaxDepth)}
-                        className="form-checkbox h-4 w-4 text-blue-600 rounded-sm"
+                        className="form-checkbox h-4 w-4 text-brand rounded-sm"
                       />
                       <label htmlFor="leftMaxDepth" className="ml-2 text-sm text-gray-700">
                         Max depth for left (+) button
@@ -299,7 +299,7 @@ export const Cl = () => {
                           type="checkbox"
                           checked={rightMaxDepth}
                           onChange={() => setRightMaxDepth(!rightMaxDepth)}
-                          className="form-checkbox h-4 w-4 text-blue-600 rounded-sm"
+                          className="form-checkbox h-4 w-4 text-brand rounded-sm"
                         />
                         <label htmlFor="rightMaxDepth" className="ml-2 text-sm text-gray-700">
                           Max depth for right (+) button
@@ -347,7 +347,7 @@ export const Cl = () => {
                 <CanvasActions />
               </Panel>
               <Controls />
-              <Background style={{ backgroundColor: '#f5f5f5' }} />
+              <Background style={{ backgroundColor: '#f8fafc' }} gap={20} />
             </ReactFlow>
           </div>
           <Sidebar setNodes={setNodes} setEdges={setEdges} setViewIsFit={setViewIsFit}

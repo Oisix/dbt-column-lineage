@@ -394,7 +394,7 @@ export const Cte = () => {
                 key={tab}
                 className={`${
                   mode === tab
-                    ? 'bg-white text-blue-600 shadow-xs'
+                    ? 'bg-white text-brand shadow-xs'
                     : 'text-gray-600 hover:bg-white/12 hover:text-gray-900'
                 } rounded-md px-2 text-xs font-medium transition-all duration-200 flex items-center justify-center h-7`}
                 onClick={() => tab === 'lineage' ? handleClickLineageMode() : setMode(tab)}

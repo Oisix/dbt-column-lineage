@@ -98,7 +98,7 @@ const ToggleButtons = () => {
           type="button"
           className={`px-2.5 py-1.5 text-xs font-medium flex items-center whitespace-nowrap ${
             activeButton === button.id
-              ? 'bg-blue-500 text-white'
+              ? 'bg-brand text-white'
               : 'bg-white text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleToggleButton(button.id)}
