@@ -24,7 +24,10 @@ for the full history prior to this file.
   nothing stands in the way of a single implementation any more. No behavior change:
   the demo project's 66 forward/reverse cases and all `/cte` (`need_meta`) results are
   byte-identical before and after, and the helper now takes the column name so the
-  CTE-parse error log keeps naming it.
+  CTE-parse error log keeps naming it. Because the demo project reaches none of the
+  helper's interesting branches, the forward path's output on star-select-over-CTE,
+  the CTE-only-label guard, UNPIVOT fan-out, joins, unions and aggregates is now
+  pinned by characterization tests that pass against both the old and the new code.
 
 ### Fixed
 - Forward column lineage no longer drops every column but the first at a hop

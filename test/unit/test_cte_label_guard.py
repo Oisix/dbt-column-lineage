@@ -6,7 +6,8 @@ but only when they are CTE names that are NOT also real dbt objects (dbt
 frequently wraps a ref in a same-named CTE, e.g.
 `with dim_calendar as (select * from {{ ref('dim_calendar') }})`).
 
-Two paths reach the guard:
+The guard lives in `__extract_lineage_node`, the walk shared by the forward
+(per-column) and reverse (batch) lineage paths. Two paths reach the guard:
 - `__resolve_star_select_label` walks a star-select's FROM and returns its
   name; a CTE reference is an `exp.Table` in sqlglot's AST, so a FROM over a
   CTE yields the CTE name. Independent of the sqlglot version.
@@ -95,7 +96,7 @@ def test_forward_plain_model_traces_to_base_model(dbt):
 # --- /cte page must NOT be affected by the guard ---------------------------
 
 def test_cte_page_still_shows_unpivot_input_cte(dbt):
-    # ガードは共有関数 __get_sqlglot_lineage に入っているが、/cte ページ
+    # ガードは共有の走査ヘルパー __extract_lineage_node に入っているが、/cte ページ
     # (cte_dependency) は CTE を表示するのが目的。CTE ノードは生パースから作られ、
     # 除外済み labels は __cte_dependency_impl 内の未使用変数にしか流れないため、
     # UNPIVOT 入力 CTE `src` も /cte 上では従来どおり表示される。
