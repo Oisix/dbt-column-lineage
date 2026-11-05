@@ -51,6 +51,10 @@ Other env flags (see `constants.py`): `USE_OAUTH`, `DEBUG_MODE`, `NEXT_PUBLIC_US
   - **Where checked**: at each recursion entry and each reverse-index child iteration. The reverse index is cached only when built completely (a budget-truncated partial index is never cached, to avoid serving incomplete results for other columns of the same source).
   - **`truncated` semantics**: the flag (`lineage.py` `budget_truncated`) reflects **only this time-budget cut** — hitting a *requested* depth (e.g. the frontend's table-mode default `depth=1`) is by design and does **not** set it, so the banner no longer fires on the intentional default view.
 
+- **`warnings`** (response field, not an env var) — a list of the parts of the lineage that could not be computed: `{kind, source, message, column?}`, where `kind` is `model_parse` (sqlglot could not parse that model's `compiled_code`) or `column_lineage` (that column's `lineage()` raised). Previously these were swallowed with a single `ERROR` log line and the endpoint returned a silently incomplete graph with 200 — the reason issue #117 stayed hidden. **Keep this separate from `truncated`**, which stays reserved for the `MAX_LINEAGE_SECONDS` cut.
+  - **The reverse path caches, so warnings must be cached with it**: `__build_reverse_index` memoizes its per-source index for the life of the process. A child model whose SQL fails to parse is skipped there, so the warning is recorded only while the index is *built*; it is therefore stored alongside the entries in `__reverse_index_cache` and re-emitted on every cache hit. Without that, the second and later requests for the same source would again be silently incomplete.
+  - Deliberately **not** reported: the CTE-fragment parse failure inside an otherwise successful walk (it degrades `replace_columns` only, no node is lost) and the `/cte` page's own parse failures (single model — an empty page is already obvious).
+
 > ⚠️ `.envrc` is gitignored but currently contains **real secrets** (Google OAuth + Looker SDK credentials). Do not commit it or echo its contents into other files; treat those values as compromised if exposed.
 
 ### CLI
@@ -64,7 +68,7 @@ The `dbt-column-lineage` entrypoint (`main.cli`, Typer) has commands: `run` (lau
 A local virtualenv lives at **`.venv/`** (gitignored) with the backend deps (`sqlglot`, `fastapi`, …) and `pytest` already installed. Run the suite through it — the system `python3` does **not** have `sqlglot`, so `python3 -m pytest` fails at import collection:
 
 ```bash
-.venv/bin/python -m pytest test/unit -q   # 67 passing on sqlglot 30.24; testpaths = ["test/unit"] (see pyproject)
+.venv/bin/python -m pytest test/unit -q   # 73 passing on sqlglot 30.24; testpaths = ["test/unit"] (see pyproject)
 # Keep .venv's sqlglot current (pip install -U "sqlglot>=30.11,<31"): pyproject pins only a
 # floor, so CI resolves the newest <31 and a stale .venv can pass locally while CI fails.
 # fresh env instead: pip install -e ".[dev]" then pytest

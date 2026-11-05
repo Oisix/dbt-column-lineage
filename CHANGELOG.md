@@ -10,6 +10,23 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+### Added
+- Lineage responses now carry a `warnings` array saying which parts of the graph could
+  not be computed — `{kind, source, message, column?}`, with `kind` either `model_parse`
+  (sqlglot could not parse that model's compiled SQL) or `column_lineage` (that column's
+  `lineage()` raised). Until now these were swallowed with a single `ERROR` line in the
+  server log and the endpoint returned a silently incomplete graph with 200, so a partial
+  answer was indistinguishable from a complete one — which is why [#117](https://github.com/Oisix/dbt-column-lineage/issues/117)
+  stayed hidden for as long as it did. The `/cl` page shows them in an expandable amber
+  banner next to the truncation one; `truncated` keeps its narrow meaning (the
+  `MAX_LINEAGE_SECONDS` cut only) and is unaffected.
+- Fixes a related silent hole in reverse lineage: `__build_reverse_index` memoizes its
+  per-source index for the life of the process, and a child model whose SQL failed to
+  parse was skipped without marking the index incomplete. The warning is now cached with
+  the index and re-emitted on every hit — before, only the very first request could have
+  surfaced it, and every later request for that source returned the same incomplete
+  result with nothing to show for it.
+
 ### Changed
 - The frontend is now built on Node 26 instead of Node 24, in both the `Dockerfile`
   builder stage and CI. Node 26 is the current even-numbered line (released

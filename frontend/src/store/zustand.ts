@@ -4,6 +4,16 @@ import { Edge } from '@xyflow/react'
 export type SourceModeType = 'dbt' | 'looker'
 type MessageType = 'success' | 'error' | 'info'
 
+/** A part of the lineage the backend could not resolve: the graph came back
+ *  incomplete even though the request succeeded. Distinct from `truncated`,
+ *  which is only the MAX_LINEAGE_SECONDS budget cut. */
+export type LineageWarning = {
+  kind: 'model_parse' | 'column_lineage'
+  source: string
+  message: string
+  column?: string
+}
+
 type State = {
   options: { rankdir: string }
   showColumn: boolean
@@ -20,6 +30,7 @@ type State = {
   isSubmitDisabled: boolean
   headerSearchDisplayMessage: string
   truncated: boolean
+  warnings: LineageWarning[]
   editMode: boolean
 }
 
@@ -39,6 +50,7 @@ type Action = {
   setIsSubmitDisabled: (v: boolean) => void
   setHeaderSearchDisplayMessage: (v: string) => void
   setTruncated: (v: boolean) => void
+  setWarnings: (v: LineageWarning[]) => void
   setEditMode: (v: boolean) => void
 }
 
@@ -58,6 +70,7 @@ export const useStore = create<State & Action>()((set) => ({
   isSubmitDisabled: false,
   headerSearchDisplayMessage: 'Select search model',
   truncated: false,
+  warnings: [],
   editMode: false,
   setOptions: (v:any) => set({options: v}),
   setShowColumn: (v:boolean) => set({showColumn: v}),
@@ -74,5 +87,6 @@ export const useStore = create<State & Action>()((set) => ({
   setIsSubmitDisabled: (v: boolean) => set({ isSubmitDisabled: v }),
   setHeaderSearchDisplayMessage: (v: string) => set({ headerSearchDisplayMessage: v }),
   setTruncated: (v: boolean) => set({ truncated: v }),
+  setWarnings: (v: LineageWarning[]) => set({ warnings: v }),
   setEditMode: (v: boolean) => set({ editMode: v }),
 }))
