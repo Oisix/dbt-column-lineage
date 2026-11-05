@@ -21,12 +21,14 @@ by [@avera-ajensen11](https://github.com/avera-ajensen11)); graphs that looked
 complete were missing nodes and edges. Expect previously-absent nodes to appear.
 It is independent of the warehouse dialect.
 
-The same release makes that class of failure visible rather than silent: when
-sqlglot cannot parse a model or trace a column, the response now carries a
-`warnings` array and the `/cl` page shows a banner, instead of logging one line
-server-side and returning 200 (#120). That also closed a second silent hole, in
-which the cached reverse index permanently hid a child model whose SQL failed to
-parse.
+The same release makes that class of failure visible rather than silent (#120).
+When sqlglot cannot parse a model or trace a column, those nodes are still
+missing and the request still succeeds with 200 — but the response now carries a
+`warnings` array naming what could not be resolved, and the `/cl` page shows a
+banner. Until now the only trace was a single `ERROR` line in the server log, so
+a partial answer was indistinguishable from a complete one. The same change also
+makes the reverse path own up to a model it had to skip, which its cached index
+had been swallowing on every request after the first.
 
 Also in this release: the lineage walk is now a single shared implementation
 (#119), and the frontend builds on Node 26 (#112).
@@ -62,12 +64,14 @@ Also in this release: the lineage walk is now a single shared implementation
   pinned by characterization tests that pass against both the old and the new code.
 
 ### Fixed
-- Reverse lineage no longer hides a child model it could not parse (#120).
-  `__build_reverse_index` memoizes its per-source index for the life of the process, and
-  a child model whose compiled SQL failed to parse was skipped without marking that index
-  incomplete — so it was stored as complete and that model stayed missing from every
-  later request for the same source. The warning is now kept with the index and
-  re-emitted on each cache hit.
+- Reverse lineage now reports the child models it had to skip, instead of dropping them
+  without a trace (#120). `__build_reverse_index` memoizes its per-source index for the
+  life of the process, and a child model whose compiled SQL failed to parse was skipped
+  without marking that index incomplete, so the index was stored as complete. Such a
+  model is still absent from the graph — sqlglot cannot parse it — but the warning is
+  now kept with the index and re-emitted on every cache hit; previously only the very
+  first request could have surfaced it, and every later request for the same source
+  returned the same incomplete result with nothing to show for it.
 - Forward column lineage no longer drops every column but the first at a hop (#118;
   reported in [#117](https://github.com/Oisix/dbt-column-lineage/issues/117)). While collecting
   replaced column names, the per-column loop in `__get_sqlglot_lineage` reassigned its
