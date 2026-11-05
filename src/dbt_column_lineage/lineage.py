@@ -63,6 +63,12 @@ class DbtSqlglot:
         # この“想定外の保護打ち切り”専用。要求 depth に達して止まるのは設計どおりなので含めない
         # (depth=1 のテーブル表示で毎回バナーが出てしまう問題を避ける)。
         self.budget_truncated = False
+        # リネージの一部が解決できなかった警告。時間予算による打ち切り(budget_truncated)
+        # とは別物で、こちらは「sqlglot がそのモデル/カラムを解析できず、ノードやエッジが
+        # 欠けたまま 200 で返っている」ことを呼び出し元に伝えるためのもの。
+        # 以前は ERROR ログを 1 行出して continue するだけで、API 利用者からは完全な
+        # グラフと区別が付かなかった(issue #117 が長く埋もれた原因)。
+        self.lineage_warnings = []
         # 時間予算の締切(MAX_LINEAGE_SECONDS>0 のときだけ。それ以外は None=無制限)。
         self._deadline = (time.monotonic() + MAX_LINEAGE_SECONDS) if MAX_LINEAGE_SECONDS and MAX_LINEAGE_SECONDS > 0 else None
 
@@ -189,7 +195,25 @@ class DbtSqlglot:
 
 
     def ret_edges_nodes(self) -> dict:
-        return {'edges': self.edges, 'nodes': self.nodes, 'truncated': self.budget_truncated}
+        return {'edges': self.edges, 'nodes': self.nodes, 'truncated': self.budget_truncated,
+                'warnings': self.lineage_warnings}
+
+    def _warn(self, kind: str, source: str, message: str, column: t.Optional[str] = None) -> dict:
+        """リネージが一部解決できなかったことを記録し、ログにも残す。
+        返した dict は呼び出し元が(リバース索引のように)持ち回って再送出できる。
+        kind: 'model_parse'(モデルの compiled_code が解析できない)
+              / 'column_lineage'(そのカラムの lineage() が失敗)"""
+        warning = {'kind': kind, 'source': source, 'message': message}
+        if column is not None:
+            warning['column'] = column
+        self.logger.error(f'lineage warning. {warning}')
+        self._add_warning(warning)
+        return warning
+
+    def _add_warning(self, warning: dict) -> None:
+        """同一内容の重複を避けて警告を積む(再帰や索引の再送出で重複しうる)。"""
+        if warning not in self.lineage_warnings:
+            self.lineage_warnings.append(warning)
 
     def _budget_exceeded(self) -> bool:
         """時間予算(MAX_LINEAGE_SECONDS)を超えていれば打ち切りフラグを立てて True。
@@ -547,7 +571,10 @@ class DbtSqlglot:
                 if end_time - start_time > 3:
                     self.logger.info(f'lineage time: source={source}, column={column}, time={end_time - start_time}秒')
             except SqlglotError:
-                self.logger.error(f'lineage error. source={source}, column={column}')
+                # このカラムのノード/エッジは出ない。黙って落とさず呼び出し元に伝える。
+                self._warn('column_lineage', source,
+                           'sqlglot could not trace this column; its upstream nodes are missing',
+                           column=column)
                 continue
 
             ret[column] = self.__extract_lineage_node(
@@ -713,7 +740,9 @@ class DbtSqlglot:
             try:
                 parsed_sql = unwrap_exclude_columns(parse_one(dbt_compiled_code, dialect=self.dialect))
             except SqlglotError:
-                self.logger.error(f'parse sql. source={next_source}')
+                # このモデル以降の上流が丸ごと辿れなくなる。
+                self._warn('model_parse', next_source,
+                           'sqlglot could not parse this model\'s compiled SQL; its upstream lineage is missing')
                 parsed_sql = None
 
             if parsed_sql:
@@ -760,6 +789,7 @@ class DbtSqlglot:
         refs = self.dbt_manifest_child_map.get(unique_id, [])
 
         entries = []
+        failures = []
         complete = True
         for ref in refs:
             # 子モデルごとに parse_one+lineage() を回す重いループ。時間予算を超えたら
@@ -793,7 +823,12 @@ class DbtSqlglot:
                 parsed_sql = unwrap_exclude_columns(parse_one(ref_compiled_code, dialect=self.dialect))
                 sql_scope = self.__build_scope(parsed_sql, sqlglot_db_schema)
             except SqlglotError:
-                self.logger.error(f'parse sql. source={source}')
+                # この子モデルは索引から丸ごと落ちる。索引はキャッシュされるので、
+                # 警告も索引と一緒に持ち回らないと 2 回目以降の照会で消えてしまう。
+                failures.append(self._warn(
+                    'model_parse', ref_node_name,
+                    'sqlglot could not parse this model\'s compiled SQL; '
+                    'its downstream lineage from this source is missing'))
                 continue
             # 子モデルのクエリ内 CTE 名(CTE 末端の除外用)
             ref_cte_names = self.__cte_names(parsed_sql)
@@ -836,7 +871,7 @@ class DbtSqlglot:
                         'ref_column': ref_column_name,
                         'columns': item_columns,
                     })
-        return entries, complete
+        return entries, complete, failures
 
     def __reverse_column_lineage(self, source: str, column: str):
         # source 単位で索引を構築・キャッシュする。キャッシュは per-request リセット
@@ -845,11 +880,18 @@ class DbtSqlglot:
         # 注: 索引は列非依存(source の全子カラムを索引化)なので、時間予算で途中打ち切り
         # した不完全な索引をキャッシュすると、別カラムの照会に流用されて黙って不完全に
         # なる。よって complete な索引のみキャッシュする(打ち切り時は今回分だけ使う)。
-        entries = self.__reverse_index_cache.get(source)
-        if entries is None:
-            entries, complete = self.__build_reverse_index(source)
+        cached = self.__reverse_index_cache.get(source)
+        if cached is None:
+            entries, complete, failures = self.__build_reverse_index(source)
             if complete:
-                self.__reverse_index_cache[source] = entries
+                # 警告も索引と一緒に保存する。索引は列非依存で使い回されるため、
+                # 警告だけが初回リクエストにしか乗らないと、2 回目以降は「同じく
+                # 不完全なのに警告なし」になってしまう。
+                self.__reverse_index_cache[source] = (entries, failures)
+        else:
+            entries, failures = cached
+            for failure in failures:
+                self._add_warning(failure)
 
         dbt_node = self.__get_dbt_node(source)
         source_schema = dbt_node.get('schema')

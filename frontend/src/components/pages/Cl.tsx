@@ -79,7 +79,9 @@ export const Cl = () => {
   const showColumn = useStoreZustand((state) => state.showColumn)
   const setShowColumn = useStoreZustand((state) => state.setShowColumn)
   const truncated = useStoreZustand((state) => state.truncated)
+  const warnings = useStoreZustand((state) => state.warnings)
   const setTruncated = useStoreZustand((state) => state.setTruncated)
+  const setWarnings = useStoreZustand((state) => state.setWarnings)
   const setSourceMode = useStoreZustand((state) => state.setSourceMode)
   const editMode = useStoreZustand((state) => state.editMode)
 
@@ -134,10 +136,11 @@ export const Cl = () => {
     setNodes(data['nodes'])
     setEdges(data['edges'])
     setTruncated(Boolean(data['truncated']))
+    setWarnings(Array.isArray(data['warnings']) ? data['warnings'] : [])
 
     setNodesPositioned(false)
     return true
-  }, [setNodes, setEdges, setShowColumn, setMessage, setTruncated])
+  }, [setNodes, setEdges, setShowColumn, setMessage, setTruncated, setWarnings])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
@@ -265,14 +268,39 @@ export const Cl = () => {
               <Panel position="top-center">
                 <EditToolbar nodes={nodes} edges={edges} setNodes={setNodes} applySnapshot={applySnapshot} />
               </Panel>
-              {truncated && (
+              {(truncated || warnings.length > 0) && (
                 <Panel position="top-center">
                   <div
-                    className="flex items-center rounded border border-amber-400 bg-amber-100 px-4 py-2 text-xs text-amber-800 shadow-md"
+                    className="flex max-w-xl flex-col gap-1 rounded border border-amber-400 bg-amber-100 px-4 py-2 text-xs text-amber-800 shadow-md"
                     role="alert"
                   >
-                    <AlertTriangle className="mr-2 h-4 w-4 shrink-0" />
-                    Lineage was truncated — some upstream/downstream nodes are omitted.
+                    {truncated && (
+                      <div className="flex items-center">
+                        <AlertTriangle className="mr-2 h-4 w-4 shrink-0" />
+                        Lineage was truncated — some upstream/downstream nodes are omitted.
+                      </div>
+                    )}
+                    {warnings.length > 0 && (
+                      <details>
+                        <summary className="flex cursor-pointer items-center">
+                          <AlertTriangle className="mr-2 h-4 w-4 shrink-0" />
+                          {warnings.length} part{warnings.length > 1 ? 's' : ''} of this lineage
+                          could not be resolved — nodes are missing.
+                        </summary>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-6">
+                          {warnings.map((w, i) => (
+                            <li key={`${w.kind}-${w.source}-${w.column ?? ''}-${i}`}>
+                              <span className="font-mono">
+                                {w.source}
+                                {w.column ? `.${w.column}` : ''}
+                              </span>
+                              {' — '}
+                              {w.message}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                   </div>
                 </Panel>
               )}

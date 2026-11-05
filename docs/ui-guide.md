@@ -73,6 +73,7 @@ The two checkboxes at the top left change what **+** fetches:
 - **Camera button** (bottom right) — copies the whole canvas to the clipboard as a PNG image, handy for pasting into docs or chat.
 - The thin bar on the right edge expands into a debug **sidebar** (zoom/pan transform and node coordinates).
 - An amber **"Lineage was truncated"** banner means the server stopped traversal because it exceeded the `MAX_LINEAGE_SECONDS` budget — the graph is partial. It does *not* appear for the intentional depth-1 default of table mode.
+- An amber **"N parts of this lineage could not be resolved"** banner means sqlglot could not parse a model's compiled SQL, or could not trace a particular column, so those nodes and edges are missing from an otherwise successful response. Expand it to see which model (and column) failed. This is a *different* condition from truncation — the traversal finished, but part of it could not be computed — and the two banners can appear together. The same information is in the API response as a `warnings` array next to `truncated`.
 
 ## The CTE page (`/cte`)
 
