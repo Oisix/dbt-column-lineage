@@ -523,14 +523,17 @@ class DbtSqlglot:
         return item
 
     def __get_sqlglot_lineage(self, source: str, parsed_sql: Expression, columns: [], sqlglot_db_schema: t.Dict | Schema, need_meta=False, sql_scope:t.Optional[Scope]=None) -> dict:
-        # 注意: 走査ロジックは __extract_lineage_node とほぼ同じだが、ここでは意図的に
-        # インライン実装を保持している。下の `parsed_sql = parse_one(cte, ...)` の再代入は
-        # ループ内で parsed_sql 引数を上書きし、scope を渡さない forward リネージの
-        # 複数カラム処理の挙動に影響する(=load-bearing)。共有ヘルパーに置換すると
-        # forward の結果が変わるため、forward/CTE 経路はこの実装のまま維持する。
-        # バッチ(reverse)経路は scope を渡すため上書きは無効で、__extract_lineage_node と
-        # 結果が一致する(equality battery で担保)。
-        # 注意: 下のループ内で parsed_sql が再代入されるため、CTE 名はここ(原本)で先に取得しておく。
+        # 走査ロジックは __extract_lineage_node とほぼ同じ(need_meta も含めて同等)。
+        # 以前はこのインライン実装を残す理由として、ループ内の
+        # `parsed_sql = parse_one(cte, ...)` による引数の上書きが forward の挙動に
+        # 効いている(=load-bearing)と注記していたが、それは誤りで実体はバグだった:
+        # scope を渡さない forward 経路(__column_lineage_recursive)では 2 カラム目以降の
+        # lineage() に「モデルの SELECT」ではなく「直前のカラムの射影式」が渡り、
+        # SqlglotError を握りつぶして黙って脱落していた(issue #117)。CTE の解析結果は
+        # cte_parsed に分離したので、parsed_sql は全カラムで原本のまま使われる。
+        # 再び parsed_sql へ代入しないこと。
+        # これで __extract_lineage_node への集約を阻む理由はなくなったが、修正を最小に
+        # 保つため統合は別途とし、ここは当面インラインのままにしてある。
         cte_names = self.__cte_names(parsed_sql)
         ret = {}
         for column in columns:
@@ -564,8 +567,8 @@ class DbtSqlglot:
                     cte = node.expression.sql(dialect=self.dialect)
                     self.logger.debug(cte)
                     try:
-                        parsed_sql = parse_one(cte, dialect=self.dialect)
-                        cl = parsed_sql.find_all(exp.Column)
+                        cte_parsed = parse_one(cte, dialect=self.dialect)
+                        cl = cte_parsed.find_all(exp.Column)
                     except SqlglotError:
                         self.logger.error(f'cte parse error. source={source}, column={column}, cte={cte}')
                         cl = []

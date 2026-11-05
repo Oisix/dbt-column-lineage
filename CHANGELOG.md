@@ -19,6 +19,19 @@ for the full history prior to this file.
   lines the build up with the `@types/node: ^26` the frontend already depends on.
 
 ### Fixed
+- Forward column lineage no longer drops every column but the first at a hop
+  ([#117](https://github.com/Oisix/dbt-column-lineage/issues/117)). While collecting
+  replaced column names, the per-column loop in `__get_sqlglot_lineage` reassigned its
+  own `parsed_sql` argument, so from the second column on sqlglot was handed the
+  previous column's projection expression instead of the model's `SELECT`. It raised,
+  the handler logged `lineage error` and skipped the column, and the node/edges for it
+  were silently missing. It fires whenever a hop needs more than one upstream column
+  (a column derived from two others is enough — no CTE required); models that chain
+  several CTEs just hit it often enough to be noticed. The loop now keeps the parsed
+  result of a CTE in its own local, and a code comment that had recorded the overwrite as
+  intentional ("load-bearing") is corrected. Reverse/batch lineage and the `/cte` page
+  were unaffected: they pass a `scope` or a single column. Thanks to
+  [@avera-ajensen11](https://github.com/avera-ajensen11) for spotting it.
 - Column lineage no longer stops dead at a Trino `table(exclude_columns(input => table(x), columns => DESCRIPTOR(...)))`
   polymorphic table function. sqlglot can't resolve its output columns, so a `SELECT *` over it never
   expanded and every column terminated on a Placeholder (no upstream node/edge). It is now rewritten to
