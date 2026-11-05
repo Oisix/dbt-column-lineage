@@ -455,13 +455,16 @@ class DbtSqlglot:
             return None
         return None
 
-    def __extract_lineage_node(self, lin, source: str, need_meta=False, cte_names: set = None) -> dict:
+    def __extract_lineage_node(self, lin, source: str, need_meta=False, cte_names: set = None,
+                               column: t.Optional[str] = None) -> dict:
         """1カラム分の sqlglot lineage Node を走査して {labels, columns(, meta)} を作る。
         per-column 経路(__get_sqlglot_lineage)とバッチ経路(__build_reverse_index の
         lineage(None))の双方から呼ぶ共有ヘルパー。両経路で抽出ロジックを一致させるため、
         ここを単一の実装に集約している。
         cte_names: 解析中クエリの CTE 名集合。末端のラベルがこれに含まれる場合は
-        実テーブルではない CTE として除外する(__is_cte_only_label)。"""
+        実テーブルではない CTE として除外する(__is_cte_only_label)。
+        column: per-column 経路から渡される対象カラム名。CTE の parse 失敗ログに
+        含めるだけで、走査結果には影響しない(バッチ経路は None)。"""
         labels = set()
         replace_columns = set()
         meta = []
@@ -484,7 +487,8 @@ class DbtSqlglot:
                     cte_parsed = parse_one(cte, dialect=self.dialect)
                     cl = cte_parsed.find_all(exp.Column)
                 except SqlglotError:
-                    self.logger.error(f'cte parse error. source={source}, cte={cte}')
+                    column_part = f', column={column}' if column is not None else ''
+                    self.logger.error(f'cte parse error. source={source}{column_part}, cte={cte}')
                     cl = []
                 for c in cl:
                     self.logger.debug(f'alias_or_name={c.alias_or_name}')
@@ -523,23 +527,19 @@ class DbtSqlglot:
         return item
 
     def __get_sqlglot_lineage(self, source: str, parsed_sql: Expression, columns: [], sqlglot_db_schema: t.Dict | Schema, need_meta=False, sql_scope:t.Optional[Scope]=None) -> dict:
-        # 走査ロジックは __extract_lineage_node とほぼ同じ(need_meta も含めて同等)。
-        # 以前はこのインライン実装を残す理由として、ループ内の
+        # 走査は __extract_lineage_node に集約済み(per-column 経路とバッチ/reverse 経路で
+        # 同一実装)。かつてここにインライン実装を残す理由として、ループ内の
         # `parsed_sql = parse_one(cte, ...)` による引数の上書きが forward の挙動に
         # 効いている(=load-bearing)と注記していたが、それは誤りで実体はバグだった:
-        # scope を渡さない forward 経路(__column_lineage_recursive)では 2 カラム目以降の
-        # lineage() に「モデルの SELECT」ではなく「直前のカラムの射影式」が渡り、
-        # SqlglotError を握りつぶして黙って脱落していた(issue #117)。CTE の解析結果は
-        # cte_parsed に分離したので、parsed_sql は全カラムで原本のまま使われる。
-        # 再び parsed_sql へ代入しないこと。
-        # これで __extract_lineage_node への集約を阻む理由はなくなったが、修正を最小に
-        # 保つため統合は別途とし、ここは当面インラインのままにしてある。
+        # scope を渡さない forward 経路では 2 カラム目以降の lineage() に「モデルの
+        # SELECT」ではなく「直前のカラムの射影式」が渡り、SqlglotError を握りつぶして
+        # 黙って脱落していた(issue #117 / PR #118 で修正)。引数 parsed_sql は全カラムで
+        # 原本のまま使うこと。
+        # cte_names は原本から 1 度だけ取る(カラムごとに変わらない)。
         cte_names = self.__cte_names(parsed_sql)
         ret = {}
         for column in columns:
             column = column.upper()
-            labels = set()
-            replace_columns = set()
             try:
                 start_time = time.time()
                 lin = lineage(column, parsed_sql, dialect=self.dialect, schema=sqlglot_db_schema, scope=sql_scope)
@@ -550,62 +550,9 @@ class DbtSqlglot:
                 self.logger.error(f'lineage error. source={source}, column={column}')
                 continue
 
-            meta = []
-            for node in lin.walk():
-                if isinstance(node.expression, exp.Table):
-                    label = node.expression.name
-                    # 配下のデータがなければ最後とみなす
-                    self.logger.debug(f'label: {label}')
-                    if len(node.downstream) == 0 and not self.__is_cte_only_label(label, cte_names, source):
-                        labels.add(label)
-                elif isinstance(node.expression, exp.Select) and len(node.downstream) == 0:
-                    label = self.__resolve_star_select_label(node.expression)
-                    self.logger.debug(f'star-select label: {label}')
-                    if label and not self.__is_cte_only_label(label, cte_names, source):
-                        labels.add(label)
-                if node.name != '*' and not isinstance(node.expression, exp.Table):
-                    cte = node.expression.sql(dialect=self.dialect)
-                    self.logger.debug(cte)
-                    try:
-                        cte_parsed = parse_one(cte, dialect=self.dialect)
-                        cl = cte_parsed.find_all(exp.Column)
-                    except SqlglotError:
-                        self.logger.error(f'cte parse error. source={source}, column={column}, cte={cte}')
-                        cl = []
-                    for c in cl:
-                        self.logger.debug(f'alias_or_name={c.alias_or_name}')
-                        replace_columns.add(c.alias_or_name.upper())
-                # CTEリネージ用の追加情報
-                if need_meta and not isinstance(node.expression, exp.Table):
-                    if node.reference_node_name == '':
-                        # 最初のselect * from finalは無視
-                        continue
-
-                    node_downstream_alias_names = []
-                    node_downstream_table_sources = []
-                    for d in node.downstream:
-                        if isinstance(d.expression, exp.Table):
-                            node_downstream_table_sources.append({'schema': d.expression.db.lower(),'table': d.expression.name.lower()})
-                            parsed_column = parse_one(d.name, dialect=self.dialect)
-                            node_downstream_alias_names.append(parsed_column.alias_or_name.lower())
-                        else:
-                            node_downstream_alias_names.append(d.expression.alias_or_name.lower())
-
-                    # カラム名が一致したら次のカラムをリセット
-                    column_name = node.expression.alias_or_name.lower()
-                    if len(node_downstream_alias_names) > 0 and column_name == node_downstream_alias_names[0]:
-                        node_downstream_alias_names = []
-                    mt = {
-                        'column': node.expression.alias_or_name.lower(),
-                        'nextColumns': node_downstream_alias_names,
-                        'nextSources': node_downstream_table_sources,
-                        'reference': node.reference_node_name.lower()
-                    }
-                    meta.append(mt)
-
-            ret[column] = {'labels': list(labels), 'columns': list(replace_columns)}
-            if need_meta:
-                ret[column]['meta'] = meta
+            ret[column] = self.__extract_lineage_node(
+                lin, source, need_meta=need_meta, cte_names=cte_names, column=column
+            )
         self.logger.info(f'{source}, {ret}')
         return ret
 
