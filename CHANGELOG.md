@@ -17,6 +17,17 @@ for the full history prior to this file.
   to Maintenance. Node is build-time only here — the wheel and the runtime image ship
   the static export and no Node at all — so nothing changes at runtime; this only
   lines the build up with the `@types/node: ^26` the frontend already depends on.
+- `__get_sqlglot_lineage` now walks sqlglot's lineage nodes through the shared
+  `__extract_lineage_node` helper instead of its own inline copy. The two had drifted
+  apart only in one log string; the stated reason for keeping the copy (an argument
+  overwrite believed to be "load-bearing") turned out to be the bug fixed in #118, so
+  nothing stands in the way of a single implementation any more. No behavior change:
+  the demo project's 66 forward/reverse cases and all `/cte` (`need_meta`) results are
+  byte-identical before and after, and the helper now takes the column name so the
+  CTE-parse error log keeps naming it. Because the demo project reaches none of the
+  helper's interesting branches, the forward path's output on star-select-over-CTE,
+  the CTE-only-label guard, UNPIVOT fan-out, joins, unions and aggregates is now
+  pinned by characterization tests that pass against both the old and the new code.
 
 ### Fixed
 - Forward column lineage no longer drops every column but the first at a hop
