@@ -55,12 +55,20 @@ def schema():
     return s
 
 
-def _lineage(dbt, columns, schema, sql=CHAINED_CTE_SQL):
+def _lineage(dbt, columns, schema, sql=CHAINED_CTE_SQL, need_meta=False):
     # parse_one は呼び出しごとに作り直す(AST が流用されないことを保証するため)
     parsed = parse_one(sql, dialect=DIALECT)
     return dbt._DbtSqlglot__get_sqlglot_lineage(
-        "test_model", parsed, list(columns), schema
+        "test_model", parsed, list(columns), schema, need_meta=need_meta
     )
+
+
+def _normalize(result):
+    """labels/columns は list(set) で順序が保証されないので、集合比較用に揃える。"""
+    return {
+        column: {key: sorted(value) for key, value in item.items() if key != "meta"}
+        for column, item in result.items()
+    }
 
 
 def test_every_requested_column_is_returned(dbt, schema):
@@ -79,12 +87,7 @@ def test_batch_matches_per_column_calls(dbt, schema):
 
     batched = _lineage(dbt, columns, schema)
 
-    assert {k: sorted(v["labels"]) for k, v in batched.items()} == {
-        k: sorted(v["labels"]) for k, v in one_by_one.items()
-    }
-    assert {k: sorted(v["columns"]) for k, v in batched.items()} == {
-        k: sorted(v["columns"]) for k, v in one_by_one.items()
-    }
+    assert _normalize(batched) == _normalize(one_by_one)
 
 
 def test_later_columns_resolve_to_the_real_source_table(dbt, schema):
@@ -118,4 +121,24 @@ def test_flat_select_without_any_cte_also_returns_every_column(dbt, schema):
     batched = _lineage(dbt, columns, schema, sql=FLAT_SQL)
 
     assert sorted(batched) == ["AMOUNT", "COUNTRY", "ID"]
-    assert batched == one_by_one
+    # labels/columns は list(set) なので、順序ではなく集合として比較する
+    assert _normalize(batched) == _normalize(one_by_one)
+
+
+def test_meta_path_also_survives_multiple_columns(dbt, schema):
+    """need_meta=True(/cte 経路と同じ形)でも全カラム分の meta が返る。
+
+    /cte は現状 1 カラムしか渡さないので本番影響はないが、走査処理を
+    __extract_lineage_node に統合する際の安全網としてここで固定しておく。"""
+    columns = ["order_id", "amt", "ctry"]
+
+    one_by_one = {}
+    for column in columns:
+        one_by_one.update(_lineage(dbt, [column], schema, need_meta=True))
+    batched = _lineage(dbt, columns, schema, need_meta=True)
+
+    assert sorted(batched) == ["AMT", "CTRY", "ORDER_ID"]
+    for column in batched:
+        assert batched[column]["meta"], f"{column} の meta が空"
+        assert batched[column]["meta"] == one_by_one[column]["meta"], column
+    assert _normalize(batched) == _normalize(one_by_one)
