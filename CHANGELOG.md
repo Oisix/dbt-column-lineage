@@ -10,9 +10,30 @@ for the full history prior to this file.
 
 ## [Unreleased]
 
+## [0.6.10] - 2026-11-05
+
+Bug-fix release, centred on lineage that came back incomplete without saying so.
+
+**If you use forward column lineage, this release changes results.** A hop that
+needed more than one upstream column silently returned only the first of them
+(#118, reported in [#117](https://github.com/Oisix/dbt-column-lineage/issues/117)
+by [@avera-ajensen11](https://github.com/avera-ajensen11)); graphs that looked
+complete were missing nodes and edges. Expect previously-absent nodes to appear.
+It is independent of the warehouse dialect.
+
+The same release makes that class of failure visible rather than silent: when
+sqlglot cannot parse a model or trace a column, the response now carries a
+`warnings` array and the `/cl` page shows a banner, instead of logging one line
+server-side and returning 200 (#120). That also closed a second silent hole, in
+which the cached reverse index permanently hid a child model whose SQL failed to
+parse.
+
+Also in this release: the lineage walk is now a single shared implementation
+(#119), and the frontend builds on Node 26 (#112).
+
 ### Added
-- Lineage responses now carry a `warnings` array saying which parts of the graph could
-  not be computed — `{kind, source, message, column?}`, with `kind` either `model_parse`
+- Lineage responses now carry a `warnings` array (#120) saying which parts of the graph
+  could not be computed — `{kind, source, message, column?}`, with `kind` either `model_parse`
   (sqlglot could not parse that model's compiled SQL) or `column_lineage` (that column's
   `lineage()` raised). Until now these were swallowed with a single `ERROR` line in the
   server log and the endpoint returned a silently incomplete graph with 200, so a partial
@@ -20,22 +41,16 @@ for the full history prior to this file.
   stayed hidden for as long as it did. The `/cl` page shows them in an expandable amber
   banner next to the truncation one; `truncated` keeps its narrow meaning (the
   `MAX_LINEAGE_SECONDS` cut only) and is unaffected.
-- Fixes a related silent hole in reverse lineage: `__build_reverse_index` memoizes its
-  per-source index for the life of the process, and a child model whose SQL failed to
-  parse was skipped without marking the index incomplete. The warning is now cached with
-  the index and re-emitted on every hit — before, only the very first request could have
-  surfaced it, and every later request for that source returned the same incomplete
-  result with nothing to show for it.
 
 ### Changed
-- The frontend is now built on Node 26 instead of Node 24, in both the `Dockerfile`
+- The frontend is now built on Node 26 instead of Node 24 (#112), in both the `Dockerfile`
   builder stage and CI. Node 26 is the current even-numbered line (released
   2026-05-05) and enters Active LTS at the end of October 2026, which drops Node 24
   to Maintenance. Node is build-time only here — the wheel and the runtime image ship
   the static export and no Node at all — so nothing changes at runtime; this only
   lines the build up with the `@types/node: ^26` the frontend already depends on.
 - `__get_sqlglot_lineage` now walks sqlglot's lineage nodes through the shared
-  `__extract_lineage_node` helper instead of its own inline copy. The two had drifted
+  `__extract_lineage_node` helper (#119) instead of its own inline copy. The two had drifted
   apart only in one log string; the stated reason for keeping the copy (an argument
   overwrite believed to be "load-bearing") turned out to be the bug fixed in #118, so
   nothing stands in the way of a single implementation any more. No behavior change:
@@ -47,8 +62,14 @@ for the full history prior to this file.
   pinned by characterization tests that pass against both the old and the new code.
 
 ### Fixed
-- Forward column lineage no longer drops every column but the first at a hop
-  ([#117](https://github.com/Oisix/dbt-column-lineage/issues/117)). While collecting
+- Reverse lineage no longer hides a child model it could not parse (#120).
+  `__build_reverse_index` memoizes its per-source index for the life of the process, and
+  a child model whose compiled SQL failed to parse was skipped without marking that index
+  incomplete — so it was stored as complete and that model stayed missing from every
+  later request for the same source. The warning is now kept with the index and
+  re-emitted on each cache hit.
+- Forward column lineage no longer drops every column but the first at a hop (#118;
+  reported in [#117](https://github.com/Oisix/dbt-column-lineage/issues/117)). While collecting
   replaced column names, the per-column loop in `__get_sqlglot_lineage` reassigned its
   own `parsed_sql` argument, so from the second column on sqlglot was handed the
   previous column's projection expression instead of the model's `SELECT`. It raised,
@@ -58,9 +79,8 @@ for the full history prior to this file.
   several CTEs just hit it often enough to be noticed. The loop now keeps the parsed
   result of a CTE in its own local, and a code comment that had recorded the overwrite as
   intentional ("load-bearing") is corrected. Reverse/batch lineage and the `/cte` page
-  were unaffected: they pass a `scope` or a single column. Thanks to
-  [@avera-ajensen11](https://github.com/avera-ajensen11) for spotting it.
-- Column lineage no longer stops dead at a Trino `table(exclude_columns(input => table(x), columns => DESCRIPTOR(...)))`
+  were unaffected: they pass a `scope` or a single column.
+- Column lineage no longer stops dead (#103) at a Trino `table(exclude_columns(input => table(x), columns => DESCRIPTOR(...)))`
   polymorphic table function. sqlglot can't resolve its output columns, so a `SELECT *` over it never
   expanded and every column terminated on a Placeholder (no upstream node/edge). It is now rewritten to
   `(SELECT * EXCEPT (...) FROM x)` before lineage runs, keeping `x`'s qualifiers and the excluded-column set.
